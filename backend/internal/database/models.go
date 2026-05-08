@@ -5,17 +5,35 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+type Juice struct {
+	ID          uuid.UUID
+	Name        string
+	Description sql.NullString
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	ImageUrl    sql.NullString
+	Stock       sql.NullInt32
+}
+
+type Order struct {
+	ID        uuid.UUID
+	Total     int32
+	CreatedAt time.Time
+	UserID    uuid.UUID
+}
+
 type User struct {
 	ID             uuid.UUID
 	Username       string
+	Email          string
 	HashedPassword string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	Role           string
-	Email          string
 }
