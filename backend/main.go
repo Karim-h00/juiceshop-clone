@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -29,6 +28,15 @@ type User struct {
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("dbURL must be set")
+	}
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("PORT environment variable is not set")
+	}
+
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal(err)
@@ -40,17 +48,20 @@ func main() {
 	}
 
 	ServeMux := http.NewServeMux()
+
 	ServeMux.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("hello world"))
 	})
+
+	ServeMux.HandleFunc("POST /api/login", cfg.handlerLogin)
+
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: ServeMux,
 	}
-	err = server.ListenAndServe()
-	if err != nil {
-		fmt.Printf("something went wrong: %v", err)
-	}
+
+	log.Printf("Serving on: http://localhost:%s/api/\n", port)
+	log.Fatal(server.ListenAndServe())
 }

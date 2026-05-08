@@ -9,3 +9,7 @@ VALUES (
     $3
 )
 RETURNING *;
+
+-- name: GetPasswordByEmail :one
+SELECT * FROM users
+WHERE email = $1;
