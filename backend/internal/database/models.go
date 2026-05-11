@@ -14,11 +14,12 @@ import (
 type Juice struct {
 	ID          uuid.UUID
 	Name        string
-	Description sql.NullString
+	Description string
+	Price       int32
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	ImageUrl    sql.NullString
-	Stock       sql.NullInt32
+	ImageUrl    string
+	Stock       int32
 }
 
 type Order struct {

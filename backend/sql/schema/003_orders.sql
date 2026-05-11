@@ -7,4 +7,4 @@ CREATE TABLE orders(
 );
 
 -- +goose Down
-DROP TABLE users;
+DROP TABLE orders;

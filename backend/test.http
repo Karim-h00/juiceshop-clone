@@ -16,3 +16,7 @@ Content-Type: application/json
     "email": "test@example.com",
     "password": "verystrongpassword"
 }
+
+### Test Get Juice
+GET http://localhost:8080/api
+Content-Type: application/json

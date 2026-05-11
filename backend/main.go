@@ -65,6 +65,8 @@ func main() {
 
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)
 
+	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
+
 	server := &http.Server{
 		Addr:    ":" + port,
 		Handler: ServeMux,
