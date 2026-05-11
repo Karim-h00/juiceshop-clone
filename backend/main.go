@@ -15,6 +15,7 @@ import (
 
 type config struct {
 	queries *database.Queries
+	secret  string
 }
 
 type User struct {
@@ -23,6 +24,7 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
 	Username  string    `json:"username"`
+	Token     string    `json:"token"`
 }
 
 func main() {
@@ -37,6 +39,11 @@ func main() {
 		log.Fatal("PORT environment variable is not set")
 	}
 
+	secret := os.Getenv("JWT_SECRET")
+	if port == "" {
+		log.Fatal("JWT_SECTER environment variable is not set")
+	}
+
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal(err)
@@ -45,6 +52,7 @@ func main() {
 	dbQueries := database.New(db)
 	cfg := config{
 		queries: dbQueries,
+		secret:  secret,
 	}
 
 	ServeMux := http.NewServeMux()
