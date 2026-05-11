@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const getAllJuice = `-- name: GetAllJuice :many
@@ -44,4 +46,25 @@ func (q *Queries) GetAllJuice(ctx context.Context) ([]Juice, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getJuiceByID = `-- name: GetJuiceByID :one
+SELECT id, name, description, price, created_at, updated_at, image_url, stock FROM juice
+WHERE id = $1
+`
+
+func (q *Queries) GetJuiceByID(ctx context.Context, id uuid.UUID) (Juice, error) {
+	row := q.db.QueryRowContext(ctx, getJuiceByID, id)
+	var i Juice
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Price,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ImageUrl,
+		&i.Stock,
+	)
+	return i, err
 }

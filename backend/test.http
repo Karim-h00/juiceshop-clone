@@ -9,6 +9,7 @@ Content-Type: application/json
 }
 
 ### Test Login user
+# @name login
 POST http://localhost:8080/api/login
 Content-Type: application/json
 
@@ -17,6 +18,13 @@ Content-Type: application/json
     "password": "verystrongpassword"
 }
 
+@token = {{login.response.body.token}}
+
 ### Test Get Juice
 GET http://localhost:8080/api
 Content-Type: application/json
+
+### Test admin endpoint
+GET http://localhost:8080/api/admin/test
+Content-Type: application/json
+Authorization: Bearer {{token}}

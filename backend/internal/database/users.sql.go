@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -61,4 +63,16 @@ func (q *Queries) GetPasswordByEmail(ctx context.Context, email string) (User, e
 		&i.Role,
 	)
 	return i, err
+}
+
+const getUserRole = `-- name: GetUserRole :one
+SELECT role FROM users
+WHERE id = $1
+`
+
+func (q *Queries) GetUserRole(ctx context.Context, id uuid.UUID) (string, error) {
+	row := q.db.QueryRowContext(ctx, getUserRole, id)
+	var role string
+	err := row.Scan(&role)
+	return role, err
 }

@@ -19,12 +19,14 @@ type config struct {
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Username  string    `json:"username"`
-	Token     string    `json:"token"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Username     string    `json:"username"`
+	Role         string    `json:"role"`
+	Token        string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 func main() {
@@ -40,7 +42,7 @@ func main() {
 	}
 
 	secret := os.Getenv("JWT_SECRET")
-	if port == "" {
+	if secret == "" {
 		log.Fatal("JWT_SECTER environment variable is not set")
 	}
 
@@ -66,6 +68,8 @@ func main() {
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)
 
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
+	ServeMux.HandleFunc("GET /api/juice/{juiceID}", cfg.handlerGetChirpByID)
+	ServeMux.HandleFunc("GET /api/admin/test", cfg.hanlderAdminTest)
 
 	server := &http.Server{
 		Addr:    ":" + port,

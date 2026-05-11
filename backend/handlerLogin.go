@@ -55,11 +55,13 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, 200, User{
-		ID:        user_data.ID,
-		Email:     user_data.Email,
-		Username:  user_data.Username,
-		CreatedAt: user_data.CreatedAt,
-		UpdatedAt: user_data.UpdatedAt,
-		Token:     user_token,
+		ID:           user_data.ID,
+		Email:        user_data.Email,
+		Username:     user_data.Username,
+		CreatedAt:    user_data.CreatedAt,
+		UpdatedAt:    user_data.UpdatedAt,
+		Role:         user_data.Role,
+		Token:        user_token,
+		RefreshToken: refreshTokenStr,
 	})
 }
