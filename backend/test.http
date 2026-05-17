@@ -28,3 +28,21 @@ Content-Type: application/json
 GET http://localhost:8080/api/admin/test
 Content-Type: application/json
 Authorization: Bearer {{token}}
+
+### Test Order Juice
+POST http://localhost:8080/api/order
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "items": [
+        {
+            "juice_id": "a0c8c419-afaf-4575-93fb-9a72fa2fc20f",
+            "quantity": 2
+        },
+        {
+            "juice_id": "caa5aa16-ba24-4472-bd85-2b4178b306dc",
+            "quantity": 1
+        }
+    ]
+}

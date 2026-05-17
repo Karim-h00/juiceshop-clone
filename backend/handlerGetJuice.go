@@ -17,7 +17,7 @@ func (cfg *config) handlerGetJuice(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (cfg *config) handlerGetChirpByID(w http.ResponseWriter, r *http.Request) {
+func (cfg *config) handlerGetJuiceByID(w http.ResponseWriter, r *http.Request) {
 	juiceID := r.PathValue("juiceID")
 	parsedID, err := uuid.Parse(juiceID)
 	if err != nil {

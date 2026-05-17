@@ -68,8 +68,10 @@ func main() {
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)
 
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
-	ServeMux.HandleFunc("GET /api/juice/{juiceID}", cfg.handlerGetChirpByID)
+	ServeMux.HandleFunc("GET /api/juice/{juiceID}", cfg.handlerGetJuiceByID)
 	ServeMux.HandleFunc("GET /api/admin/test", cfg.hanlderAdminTest)
+
+	ServeMux.HandleFunc("POST /api/order", cfg.handlerOrderJuice)
 
 	server := &http.Server{
 		Addr:    ":" + port,

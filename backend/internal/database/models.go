@@ -29,6 +29,13 @@ type Order struct {
 	UserID    uuid.UUID
 }
 
+type OrderItem struct {
+	ID       uuid.UUID
+	OrderID  uuid.UUID
+	JuiceID  uuid.UUID
+	Quantity int32
+}
+
 type RefreshToken struct {
 	Token     string
 	CreatedAt time.Time
