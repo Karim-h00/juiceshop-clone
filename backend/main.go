@@ -58,10 +58,6 @@ func main() {
 
 	ServeMux := http.NewServeMux()
 
-	ServeMux.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello world"))
-	})
-
 	ServeMux.HandleFunc("POST /api/login", cfg.handlerLogin)
 
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)

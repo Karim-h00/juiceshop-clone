@@ -4,14 +4,27 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/karim-h00/juiceshop-clone/internal/database"
 )
 
 func (cfg *config) handlerGetJuice(w http.ResponseWriter, r *http.Request) {
 
-	data, err := cfg.queries.GetAllJuice(r.Context())
-	if err != nil {
-		respondWithError(w, 500, "Error retrieving chirp")
-		return
+	q := r.URL.Query().Get("q")
+	var data = []database.Juice{}
+	var err error
+
+	if q != "" {
+		data, err = cfg.queries.GetJuiceByName(r.Context(), "%"+q+"%")
+		if err != nil {
+			respondWithError(w, 500, "Error retrieving Juices")
+			return
+		}
+	} else {
+		data, err = cfg.queries.GetAllJuice(r.Context())
+		if err != nil {
+			respondWithError(w, 500, "Error retrieving Juices")
+			return
+		}
 	}
 	respondWithJSON(w, 200, data)
 
@@ -26,7 +39,7 @@ func (cfg *config) handlerGetJuiceByID(w http.ResponseWriter, r *http.Request) {
 	}
 	data, err := cfg.queries.GetJuiceByID(r.Context(), parsedID)
 	if err != nil {
-		respondWithError(w, 500, "Error retrieving chirp")
+		respondWithError(w, 500, "Error retrieving Juice")
 		return
 	}
 	respondWithJSON(w, 200, data)

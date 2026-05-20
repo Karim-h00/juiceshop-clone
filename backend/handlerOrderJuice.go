@@ -36,9 +36,16 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
+	if len(params.Items) == 0 {
+		respondWithError(w, 400, "Order must contain at least one item")
+		return
+	}
 
 	juiceIDs := make([]uuid.UUID, len(params.Items))
 	for i, item := range params.Items {
+		if item.Quantity <= 0 {
+			respondWithError(w, 400, "Quantity must be positive")
+		}
 		parsed, err := uuid.Parse(item.JuiceID)
 		if err != nil {
 			respondWithError(w, 400, "Invalid juice ID")
@@ -99,7 +106,6 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 		CreatedAt time.Time           `json:"created_at"`
 		Items     []orderItemResponse `json:"items"`
 	}
-
 	itemsResp := make([]orderItemResponse, len(params.Items))
 	for i, item := range params.Items {
 		id := uuid.MustParse(item.JuiceID)
@@ -117,5 +123,4 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: order.CreatedAt,
 		Items:     itemsResp,
 	})
-
 }

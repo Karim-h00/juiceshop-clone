@@ -68,3 +68,40 @@ func (q *Queries) GetJuiceByID(ctx context.Context, id uuid.UUID) (Juice, error)
 	)
 	return i, err
 }
+
+const getJuiceByName = `-- name: GetJuiceByName :many
+SELECT id, name, description, price, created_at, updated_at, image_url, stock FROM juice
+WHERE name ILIKE $1
+`
+
+func (q *Queries) GetJuiceByName(ctx context.Context, name string) ([]Juice, error) {
+	rows, err := q.db.QueryContext(ctx, getJuiceByName, name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Juice
+	for rows.Next() {
+		var i Juice
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Price,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ImageUrl,
+			&i.Stock,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
