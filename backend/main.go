@@ -24,7 +24,6 @@ type User struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 	Email        string    `json:"email"`
 	Username     string    `json:"username"`
-	Role         string    `json:"role"`
 	Token        string    `json:"token"`
 	RefreshToken string    `json:"refresh_token"`
 }
@@ -69,7 +68,7 @@ func main() {
 
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
 	ServeMux.HandleFunc("GET /api/juice/{juiceID}", cfg.handlerGetJuiceByID)
-	ServeMux.HandleFunc("GET /api/admin/test", cfg.hanlderAdminTest)
+	ServeMux.HandleFunc("GET /api/admin/test", cfg.handlerAdminTest)
 
 	ServeMux.HandleFunc("POST /api/order", cfg.handlerOrderJuice)
 

@@ -47,8 +47,12 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		UserID:    user_data.ID,
 		ExpiresAt: time.Now().UTC().AddDate(0, 0, 60),
 	})
+	if err != nil {
+		respondWithError(w, 500, "Could not create refresh token")
+		return
+	}
 
-	user_token, err := auth.MakeJWT(user_data.ID, cfg.secret, defaultExpiry)
+	user_token, err := auth.MakeJWT(user_data.ID, cfg.secret, defaultExpiry, user_data.Role)
 	if err != nil {
 		respondWithError(w, 500, "Could not create session")
 		return
@@ -60,7 +64,6 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Username:     user_data.Username,
 		CreatedAt:    user_data.CreatedAt,
 		UpdatedAt:    user_data.UpdatedAt,
-		Role:         user_data.Role,
 		Token:        user_token,
 		RefreshToken: refreshTokenStr,
 	})

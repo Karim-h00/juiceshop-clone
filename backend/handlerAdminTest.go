@@ -6,13 +6,13 @@ import (
 	"github.com/karim-h00/juiceshop-clone/internal/auth"
 )
 
-func (cfg *config) hanlderAdminTest(w http.ResponseWriter, r *http.Request) {
+func (cfg *config) handlerAdminTest(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, 401, "Unauthorized")
 		return
 	}
-	userID, err := auth.ValidateJWT(token, cfg.secret)
+	userID, tokenRole, err := auth.ValidateJWT(token, cfg.secret)
 	if err != nil {
 		respondWithError(w, 400, "Could not make session")
 		return
@@ -24,6 +24,10 @@ func (cfg *config) hanlderAdminTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if role != tokenRole {
+		respondWithError(w, 403, "mismatched token")
+		return
+	}
 	if role != "admin" {
 		respondWithError(w, 401, "Unauthorized")
 		return

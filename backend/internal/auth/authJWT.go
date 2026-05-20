@@ -7,12 +7,20 @@ import (
 	"github.com/google/uuid"
 )
 
-func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Issuer:    "juiceshop-clone-access",
-		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
-		Subject:   userID.String(),
+type Claims struct {
+	Role string `json:"role"`
+	jwt.RegisteredClaims
+}
+
+func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration, role string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+		Role: role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "juiceshop-clone-access",
+			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
+			Subject:   userID.String(),
+		},
 	})
 	ss, err := token.SignedString([]byte(tokenSecret))
 	if err != nil {
@@ -21,20 +29,20 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 	return ss, nil
 }
 
-func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
+func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, string, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		return []byte(tokenSecret), nil
 	})
 	if err != nil {
-		return uuid.UUID{}, err
+		return uuid.UUID{}, "", err
 	}
-	claims, ok := token.Claims.(*jwt.RegisteredClaims)
+	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
-		return uuid.UUID{}, err
+		return uuid.UUID{}, "", err
 	}
 	userID, err := uuid.Parse(claims.Subject)
 	if err != nil {
-		return uuid.UUID{}, err
+		return uuid.UUID{}, "", err
 	}
-	return userID, nil
+	return userID, claims.Role, nil
 }

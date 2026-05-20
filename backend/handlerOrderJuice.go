@@ -23,7 +23,7 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 401, "Unauthorized")
 		return
 	}
-	userID, err := auth.ValidateJWT(token, cfg.secret)
+	userID, _, err := auth.ValidateJWT(token, cfg.secret)
 	if err != nil {
 		respondWithError(w, 400, "Could not make session")
 		return
