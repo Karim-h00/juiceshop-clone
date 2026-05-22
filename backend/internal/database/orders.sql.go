@@ -7,9 +7,9 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
 
 const createOrder = `-- name: CreateOrder :one
@@ -59,25 +59,62 @@ func (q *Queries) CreateOrderItem(ctx context.Context, arg CreateOrderItemParams
 	return i, err
 }
 
-const getJuicesByIDs = `-- name: GetJuicesByIDs :many
-SELECT id, price FROM juice WHERE id = ANY($1::uuid[])
+const getOrderItemsByOrderID = `-- name: GetOrderItemsByOrderID :many
+SELECT juice_id, quantity, juice.name FROM order_items
+JOIN juice ON order_items.juice_id = juice.id
+WHERE order_items.order_id = $1
 `
 
-type GetJuicesByIDsRow struct {
-	ID    uuid.UUID
-	Price int32
+type GetOrderItemsByOrderIDRow struct {
+	JuiceID  uuid.UUID
+	Quantity int32
+	Name     string
 }
 
-func (q *Queries) GetJuicesByIDs(ctx context.Context, ids []uuid.UUID) ([]GetJuicesByIDsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getJuicesByIDs, pq.Array(ids))
+func (q *Queries) GetOrderItemsByOrderID(ctx context.Context, orderID uuid.UUID) ([]GetOrderItemsByOrderIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, getOrderItemsByOrderID, orderID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetJuicesByIDsRow
+	var items []GetOrderItemsByOrderIDRow
 	for rows.Next() {
-		var i GetJuicesByIDsRow
-		if err := rows.Scan(&i.ID, &i.Price); err != nil {
+		var i GetOrderItemsByOrderIDRow
+		if err := rows.Scan(&i.JuiceID, &i.Quantity, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getOrdersByUserID = `-- name: GetOrdersByUserID :many
+SELECT id, created_at, total FROM orders
+WHERE user_id = $1
+`
+
+type GetOrdersByUserIDRow struct {
+	ID        uuid.UUID
+	CreatedAt time.Time
+	Total     int32
+}
+
+func (q *Queries) GetOrdersByUserID(ctx context.Context, userID uuid.UUID) ([]GetOrdersByUserIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, getOrdersByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetOrdersByUserIDRow
+	for rows.Next() {
+		var i GetOrdersByUserIDRow
+		if err := rows.Scan(&i.ID, &i.CreatedAt, &i.Total); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

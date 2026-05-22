@@ -45,6 +45,7 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 	for i, item := range params.Items {
 		if item.Quantity <= 0 {
 			respondWithError(w, 400, "Quantity must be positive")
+			return
 		}
 		parsed, err := uuid.Parse(item.JuiceID)
 		if err != nil {
@@ -58,20 +59,29 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 500, "Could not fetch juices")
 		return
 	}
-	priceMap := make(map[uuid.UUID]int32, len(juices))
+
+	type juiceInfo struct {
+		name     string
+		price    int32
+		quantity int32
+	}
+	stockMap := make(map[uuid.UUID]juiceInfo, len(juices))
 	for _, j := range juices {
-		priceMap[j.ID] = j.Price
+		stockMap[j.ID] = juiceInfo{name: j.Name, price: j.Price, quantity: j.Stock}
 	}
 
 	var computedTotal int32
-	for _, item := range params.Items {
-		id := uuid.MustParse(item.JuiceID)
-		price, ok := priceMap[id]
+	for i, item := range params.Items {
+		info, ok := stockMap[juiceIDs[i]]
 		if !ok {
 			respondWithError(w, 400, "Juice not found: "+item.JuiceID)
 			return
 		}
-		computedTotal += price * int32(item.Quantity)
+		if int32(item.Quantity) > info.quantity {
+			respondWithError(w, 400, "Insufficient stock for: "+info.name)
+			return
+		}
+		computedTotal += info.price * int32(item.Quantity)
 	}
 
 	order, err := cfg.queries.CreateOrder(r.Context(), database.CreateOrderParams{
@@ -83,17 +93,26 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, item := range params.Items {
+	for i, item := range params.Items {
 		_, err := cfg.queries.CreateOrderItem(r.Context(), database.CreateOrderItemParams{
 			OrderID:  order.ID,
-			JuiceID:  uuid.MustParse(item.JuiceID),
+			JuiceID:  juiceIDs[i],
 			Quantity: int32(item.Quantity),
 		})
 		if err != nil {
 			respondWithError(w, 500, "Could not create order item")
 			return
 		}
+		err = cfg.queries.DecrementJuiceStock(r.Context(), database.DecrementJuiceStockParams{
+			ID:    juiceIDs[i],
+			Stock: int32(item.Quantity),
+		})
+		if err != nil {
+			respondWithError(w, 500, "Could not update stock")
+			return
+		}
 	}
+
 	type orderItemResponse struct {
 		JuiceID  string `json:"juice_id"`
 		Quantity int    `json:"quantity"`
@@ -108,11 +127,11 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 	}
 	itemsResp := make([]orderItemResponse, len(params.Items))
 	for i, item := range params.Items {
-		id := uuid.MustParse(item.JuiceID)
+		id := juiceIDs[i]
 		itemsResp[i] = orderItemResponse{
 			JuiceID:  item.JuiceID,
 			Quantity: item.Quantity,
-			Price:    priceMap[id],
+			Price:    stockMap[id].price,
 		}
 	}
 

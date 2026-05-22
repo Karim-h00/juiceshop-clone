@@ -67,6 +67,7 @@ func main() {
 	ServeMux.HandleFunc("GET /api/admin/test", cfg.handlerAdminTest)
 
 	ServeMux.HandleFunc("POST /api/order", cfg.handlerOrderJuice)
+	ServeMux.HandleFunc("GET /api/order", cfg.handlerGetUserOrderHistory)
 
 	server := &http.Server{
 		Addr:    ":" + port,

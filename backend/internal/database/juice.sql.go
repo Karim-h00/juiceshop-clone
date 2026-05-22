@@ -9,7 +9,24 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
+
+const decrementJuiceStock = `-- name: DecrementJuiceStock :exec
+UPDATE juice
+SET stock = stock - $1
+WHERE id = $2
+`
+
+type DecrementJuiceStockParams struct {
+	Stock int32
+	ID    uuid.UUID
+}
+
+func (q *Queries) DecrementJuiceStock(ctx context.Context, arg DecrementJuiceStockParams) error {
+	_, err := q.db.ExecContext(ctx, decrementJuiceStock, arg.Stock, arg.ID)
+	return err
+}
 
 const getAllJuice = `-- name: GetAllJuice :many
 SELECT id, name, description, price, created_at, updated_at, image_url, stock FROM juice 
@@ -91,6 +108,45 @@ func (q *Queries) GetJuiceByName(ctx context.Context, name string) ([]Juice, err
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ImageUrl,
+			&i.Stock,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getJuicesByIDs = `-- name: GetJuicesByIDs :many
+SELECT name, id, price, stock FROM juice WHERE id = ANY($1::uuid[])
+`
+
+type GetJuicesByIDsRow struct {
+	Name  string
+	ID    uuid.UUID
+	Price int32
+	Stock int32
+}
+
+func (q *Queries) GetJuicesByIDs(ctx context.Context, ids []uuid.UUID) ([]GetJuicesByIDsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getJuicesByIDs, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetJuicesByIDsRow
+	for rows.Next() {
+		var i GetJuicesByIDsRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.ID,
+			&i.Price,
 			&i.Stock,
 		); err != nil {
 			return nil, err

@@ -14,4 +14,5 @@ CREATE TABLE order_items (
 );
 
 -- +goose Down
+DROP TABLE order_items;
 DROP TABLE orders;

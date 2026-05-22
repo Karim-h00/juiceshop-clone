@@ -37,12 +37,31 @@ Authorization: Bearer {{token}}
 {
     "items": [
         {
-            "juice_id": "a0c8c419-afaf-4575-93fb-9a72fa2fc20f",
+            "juice_id": "c183b981-58b3-425e-8f94-17659deec61c",
             "quantity": 2
         },
         {
-            "juice_id": "caa5aa16-ba24-4472-bd85-2b4178b306dc",
+            "juice_id": "311b5214-ab1b-46bc-98dd-89d24c415bec",
             "quantity": 1
         }
     ]
 }
+
+### Test Order Juice wrong id
+POST http://localhost:8080/api/order
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "items": [
+        {
+            "juice_id": "a1b2c3d4-0000-0000-0000-000000000000",
+            "quantity": 2
+        }
+    ]
+}
+
+### Test Get Order History
+GET http://localhost:8080/api/order
+Content-Type: application/json
+Authorization: Bearer {{token}}
