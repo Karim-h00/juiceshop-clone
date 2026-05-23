@@ -12,6 +12,48 @@ import (
 	"github.com/lib/pq"
 )
 
+const addJuice = `-- name: AddJuice :one
+INSERT INTO juice (id, name, description, price, created_at, updated_at, stock)
+VALUES (
+    gen_random_uuid(),
+    $1,
+    $2,
+    $3,
+    now(),
+    now(),
+    $4
+)
+RETURNING id, name, description, price, created_at, updated_at, image_url, stock
+`
+
+type AddJuiceParams struct {
+	Name        string
+	Description string
+	Price       int32
+	Stock       int32
+}
+
+func (q *Queries) AddJuice(ctx context.Context, arg AddJuiceParams) (Juice, error) {
+	row := q.db.QueryRowContext(ctx, addJuice,
+		arg.Name,
+		arg.Description,
+		arg.Price,
+		arg.Stock,
+	)
+	var i Juice
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Price,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ImageUrl,
+		&i.Stock,
+	)
+	return i, err
+}
+
 const decrementJuiceStock = `-- name: DecrementJuiceStock :exec
 UPDATE juice
 SET stock = stock - $1
@@ -160,4 +202,46 @@ func (q *Queries) GetJuicesByIDs(ctx context.Context, ids []uuid.UUID) ([]GetJui
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateJuice = `-- name: UpdateJuice :one
+UPDATE juice
+SET
+    name = $1,
+    description = $2,
+    price = $3,
+    stock = $4,
+    updated_at = now()
+WHERE id = $5
+RETURNING id, name, description, price, created_at, updated_at, image_url, stock
+`
+
+type UpdateJuiceParams struct {
+	Name        string
+	Description string
+	Price       int32
+	Stock       int32
+	ID          uuid.UUID
+}
+
+func (q *Queries) UpdateJuice(ctx context.Context, arg UpdateJuiceParams) (Juice, error) {
+	row := q.db.QueryRowContext(ctx, updateJuice,
+		arg.Name,
+		arg.Description,
+		arg.Price,
+		arg.Stock,
+		arg.ID,
+	)
+	var i Juice
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Price,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ImageUrl,
+		&i.Stock,
+	)
+	return i, err
 }
