@@ -64,10 +64,10 @@ func main() {
 
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
 	ServeMux.HandleFunc("GET /api/juice/{juiceID}", cfg.handlerGetJuiceByID)
-	ServeMux.HandleFunc("GET /api/admin/test", cfg.handlerAdminTest)
+	ServeMux.Handle("GET /api/admin/test", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminTest)))
 
-	ServeMux.HandleFunc("POST /api/admin/juice", cfg.handlerAddJuice)
-	ServeMux.HandleFunc("PUT /api/admin/juice/{juiceID}", cfg.handlerUpdateJuice)
+	ServeMux.Handle("POST /api/admin/juice", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAddJuice)))
+	ServeMux.Handle("PUT /api/admin/juice/{juiceID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerUpdateJuice)))
 
 	ServeMux.HandleFunc("POST /api/order", cfg.handlerOrderJuice)
 	ServeMux.HandleFunc("GET /api/order", cfg.handlerGetUserOrderHistory)

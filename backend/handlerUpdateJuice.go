@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/karim-h00/juiceshop-clone/internal/auth"
 	"github.com/karim-h00/juiceshop-clone/internal/database"
 )
 
@@ -17,29 +16,6 @@ type update_juice_params struct {
 }
 
 func (cfg *config) handlerUpdateJuice(w http.ResponseWriter, r *http.Request) {
-	token, err := auth.GetBearerToken(r.Header)
-	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
-		return
-	}
-	userID, tokenRole, err := auth.ValidateJWT(token, cfg.secret)
-	if err != nil {
-		respondWithError(w, 400, "Could not make session")
-		return
-	}
-	role, err := cfg.queries.GetUserRole(r.Context(), userID)
-	if err != nil {
-		respondWithError(w, 500, "Error getting user role")
-		return
-	}
-	if role != tokenRole {
-		respondWithError(w, 403, "mismatched token")
-		return
-	}
-	if role != "admin" {
-		respondWithError(w, 401, "Unauthorized")
-		return
-	}
 
 	juiceID := r.PathValue("juiceID")
 	parsedID, err := uuid.Parse(juiceID)
