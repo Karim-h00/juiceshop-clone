@@ -65,3 +65,27 @@ Authorization: Bearer {{token}}
 GET http://localhost:8080/api/order
 Content-Type: application/json
 Authorization: Bearer {{token}}
+
+### Test Add Juice as Admin
+POST http://localhost:8080/api/admin/juice
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "Mango Juice",
+    "description": "Fresh mango juice",
+    "price": 500,
+    "stock": 100
+}
+
+### Test Update Juice as Admin
+PUT http://localhost:8080/api/admin/juice/d774426c-1faa-4eda-bb2a-9c7e0bb9c4a3
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "Mango Juice",
+    "description": "Fresh mango juice",
+    "price": 699,
+    "stock": 100
+}
