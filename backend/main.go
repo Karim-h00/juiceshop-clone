@@ -42,7 +42,7 @@ func main() {
 
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		log.Fatal("JWT_SECTER environment variable is not set")
+		log.Fatal("JWT_SECRET environment variable is not set")
 	}
 
 	db, err := sql.Open("postgres", dbURL)
@@ -60,6 +60,7 @@ func main() {
 
 	ServeMux.HandleFunc("POST /api/login", cfg.handlerLogin)
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)
+	ServeMux.HandleFunc("GET /api/refresh", cfg.handlerRefresh)
 
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
 	ServeMux.HandleFunc("GET /api/juice/{juiceID}", cfg.handlerGetJuiceByID)

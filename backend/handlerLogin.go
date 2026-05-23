@@ -34,22 +34,30 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 401, "wrong email or password")
 		return
 	}
-	refreshTokenStr, err := auth.MakeRefreshToken()
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't create refresh token")
-		return
-	}
 
-	_, err = cfg.queries.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
-		Token:     refreshTokenStr,
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
-		UserID:    user_data.ID,
-		ExpiresAt: time.Now().UTC().AddDate(0, 0, 60),
-	})
-	if err != nil {
-		respondWithError(w, 500, "Could not create refresh token")
-		return
+	var refreshTokenStr string
+	existingToken, err := cfg.queries.GetRefreshTokenByUserID(r.Context(), user_data.ID)
+	if err == nil && !existingToken.RevokedAt.Valid && time.Now().UTC().Before(existingToken.ExpiresAt) {
+		refreshTokenStr = existingToken.Token
+	} else {
+		cfg.queries.DeleteRefreshTokenByUserID(r.Context(), user_data.ID)
+		refreshTokenStr, err = auth.MakeRefreshToken()
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't create refresh token")
+			return
+		}
+
+		_, err = cfg.queries.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+			Token:     refreshTokenStr,
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			UserID:    user_data.ID,
+			ExpiresAt: time.Now().UTC().AddDate(0, 0, 60),
+		})
+		if err != nil {
+			respondWithError(w, 500, "Could not create refresh token")
+			return
+		}
 	}
 
 	user_token, err := auth.MakeJWT(user_data.ID, cfg.secret, defaultExpiry, user_data.Role)

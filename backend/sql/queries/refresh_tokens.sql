@@ -29,3 +29,10 @@ WHERE refresh_tokens.token = $1
 UPDATE refresh_tokens
 SET revoked_at = $1, updated_at = $2
 WHERE token = $3;
+
+-- name: GetRefreshTokenByUserID :one
+SELECT * FROM refresh_tokens
+WHERE user_id = $1;
+
+-- name: DeleteRefreshTokenByUserID :exec
+DELETE FROM refresh_tokens WHERE user_id = $1;
