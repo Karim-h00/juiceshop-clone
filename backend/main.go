@@ -60,6 +60,7 @@ func main() {
 
 	ServeMux.HandleFunc("POST /api/login", cfg.handlerLogin)
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)
+	ServeMux.HandleFunc("PUT /api/users", cfg.handlerUpdateUser)
 	ServeMux.HandleFunc("GET /api/refresh", cfg.handlerRefresh)
 
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)

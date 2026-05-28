@@ -17,3 +17,20 @@ WHERE email = $1;
 -- name: GetUserRole :one
 SELECT role FROM users
 WHERE id = $1;
+
+-- name: UpdateUser :one
+UPDATE users
+SET
+    username = $1,
+    email = $2,
+    updated_at = now()
+WHERE id = $3
+RETURNING *;
+
+-- name: UpdateUserPassword :one
+UPDATE users
+SET
+    hashed_password = $1,
+    updated_at = now()
+WHERE id = $2
+RETURNING *;

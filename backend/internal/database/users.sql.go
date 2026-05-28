@@ -76,3 +76,63 @@ func (q *Queries) GetUserRole(ctx context.Context, id uuid.UUID) (string, error)
 	err := row.Scan(&role)
 	return role, err
 }
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users
+SET
+    username = $1,
+    email = $2,
+    updated_at = now()
+WHERE id = $3
+RETURNING id, username, email, hashed_password, created_at, updated_at, role
+`
+
+type UpdateUserParams struct {
+	Username string
+	Email    string
+	ID       uuid.UUID
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUser, arg.Username, arg.Email, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Role,
+	)
+	return i, err
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :one
+UPDATE users
+SET
+    hashed_password = $1,
+    updated_at = now()
+WHERE id = $2
+RETURNING id, username, email, hashed_password, created_at, updated_at, role
+`
+
+type UpdateUserPasswordParams struct {
+	HashedPassword string
+	ID             uuid.UUID
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUserPassword, arg.HashedPassword, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Role,
+	)
+	return i, err
+}
