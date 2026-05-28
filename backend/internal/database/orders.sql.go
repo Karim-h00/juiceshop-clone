@@ -59,6 +59,33 @@ func (q *Queries) CreateOrderItem(ctx context.Context, arg CreateOrderItemParams
 	return i, err
 }
 
+const deleteOrderByOrderID = `-- name: DeleteOrderByOrderID :exec
+DELETE FROM orders 
+where id = $1
+`
+
+func (q *Queries) DeleteOrderByOrderID(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteOrderByOrderID, id)
+	return err
+}
+
+const getOrderByOrderID = `-- name: GetOrderByOrderID :one
+SELECT id, total, created_at, user_id FROM orders 
+WHERE id = $1
+`
+
+func (q *Queries) GetOrderByOrderID(ctx context.Context, id uuid.UUID) (Order, error) {
+	row := q.db.QueryRowContext(ctx, getOrderByOrderID, id)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.Total,
+		&i.CreatedAt,
+		&i.UserID,
+	)
+	return i, err
+}
+
 const getOrderItemsByOrderID = `-- name: GetOrderItemsByOrderID :many
 SELECT juice_id, quantity, juice.name FROM order_items
 JOIN juice ON order_items.juice_id = juice.id

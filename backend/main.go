@@ -60,19 +60,24 @@ func main() {
 
 	ServeMux.HandleFunc("POST /api/login", cfg.handlerLogin)
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)
-	ServeMux.HandleFunc("PUT /api/users", cfg.handlerUpdateUser)
-	ServeMux.HandleFunc("GET /api/refresh", cfg.handlerRefresh)
-	ServeMux.HandleFunc("GET /api/logout", cfg.handlerLogout)
+	ServeMux.Handle("PUT /api/users", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerUpdateUser)))
+	ServeMux.Handle("POST /api/user/password", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerUpdatePassword)))
+
+	ServeMux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)
+	ServeMux.Handle("POST /api/logout", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerLogout)))
 
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
-	ServeMux.HandleFunc("GET /api/juice/{juiceID}", cfg.handlerGetJuiceByID)
+	ServeMux.HandleFunc("GET /api/juice/{juiceName}", cfg.handlerGetJuiceByName)
 
 	ServeMux.Handle("GET /api/admin/test", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminTest)))
 	ServeMux.Handle("POST /api/admin/juice", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAddJuice)))
 	ServeMux.Handle("PUT /api/admin/juice/{juiceID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerUpdateJuice)))
+	ServeMux.Handle("DELETE /api/admin/juice/{juiceID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerDeleteJuice)))
 
-	ServeMux.HandleFunc("POST /api/order", cfg.handlerOrderJuice)
-	ServeMux.HandleFunc("GET /api/order", cfg.handlerGetUserOrderHistory)
+	ServeMux.Handle("POST /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerOrderJuice)))
+	ServeMux.Handle("GET /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetUserOrderHistory)))
+	ServeMux.Handle("GET /api/order/{orderID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetOrderByID)))
+	ServeMux.Handle("DELETE /api/order/{orderID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerDeleteOrder)))
 
 	server := &http.Server{
 		Addr:    ":" + port,

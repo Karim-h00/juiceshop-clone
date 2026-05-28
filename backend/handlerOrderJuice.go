@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/karim-h00/juiceshop-clone/internal/auth"
 	"github.com/karim-h00/juiceshop-clone/internal/database"
 )
 
@@ -18,20 +17,11 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 		} `json:"items"`
 	}
 
-	token, err := auth.GetBearerToken(r.Header)
-	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
-		return
-	}
-	userID, _, err := auth.ValidateJWT(token, cfg.secret)
-	if err != nil {
-		respondWithError(w, 400, "Could not make session")
-		return
-	}
+	userID := r.Context().Value(contextKeyUserID).(uuid.UUID)
 
 	decoder := json.NewDecoder(r.Body)
 	params := order_params{}
-	err = decoder.Decode(&params)
+	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, 400, "Error decoding params")
 		return

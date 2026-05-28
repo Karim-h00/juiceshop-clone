@@ -4,31 +4,23 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/karim-h00/juiceshop-clone/internal/auth"
+	"github.com/google/uuid"
 )
 
-func (cfg *config) handlerGetUserOrderHistory(w http.ResponseWriter, r *http.Request) {
-	type orderItems struct {
-		Name     string `json:"name"`
-		Quantity int32  `json:"quantity"`
-	}
-	type orderResponse struct {
-		OrderID   string       `json:"order_id"`
-		Total     int32        `json:"total"`
-		CreatedAt time.Time    `json:"created_at"`
-		Items     []orderItems `json:"items"`
-	}
+type orderItems struct {
+	Name     string `json:"name"`
+	Quantity int32  `json:"quantity"`
+}
+type orderResponse struct {
+	OrderID   string       `json:"order_id"`
+	Total     int32        `json:"total"`
+	CreatedAt time.Time    `json:"created_at"`
+	Items     []orderItems `json:"items"`
+}
 
-	token, err := auth.GetBearerToken(r.Header)
-	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
-		return
-	}
-	userID, _, err := auth.ValidateJWT(token, cfg.secret)
-	if err != nil {
-		respondWithError(w, 400, "Could not make session")
-		return
-	}
+func (cfg *config) handlerGetUserOrderHistory(w http.ResponseWriter, r *http.Request) {
+
+	userID := r.Context().Value(contextKeyUserID).(uuid.UUID)
 
 	orders, err := cfg.queries.GetOrdersByUserID(r.Context(), userID)
 	if err != nil {

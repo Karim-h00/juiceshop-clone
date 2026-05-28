@@ -70,6 +70,16 @@ func (q *Queries) DecrementJuiceStock(ctx context.Context, arg DecrementJuiceSto
 	return err
 }
 
+const deleteJuice = `-- name: DeleteJuice :exec
+DELETE FROM juice 
+WHERE id = $1
+`
+
+func (q *Queries) DeleteJuice(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteJuice, id)
+	return err
+}
+
 const getAllJuice = `-- name: GetAllJuice :many
 SELECT id, name, description, price, created_at, updated_at, image_url, stock FROM juice 
 ORDER BY created_at ASC

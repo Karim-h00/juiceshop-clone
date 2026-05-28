@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/karim-h00/juiceshop-clone/internal/database"
 )
 
@@ -30,14 +29,10 @@ func (cfg *config) handlerGetJuice(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (cfg *config) handlerGetJuiceByID(w http.ResponseWriter, r *http.Request) {
-	juiceID := r.PathValue("juiceID")
-	parsedID, err := uuid.Parse(juiceID)
-	if err != nil {
-		respondWithError(w, 400, "failed to parse ID")
-		return
-	}
-	data, err := cfg.queries.GetJuiceByID(r.Context(), parsedID)
+func (cfg *config) handlerGetJuiceByName(w http.ResponseWriter, r *http.Request) {
+	juiceName := r.PathValue("juiceName")
+
+	data, err := cfg.queries.GetJuiceByName(r.Context(), juiceName)
 	if err != nil {
 		respondWithError(w, 500, "Error retrieving Juice")
 		return

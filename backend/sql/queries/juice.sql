@@ -41,3 +41,7 @@ SET
     updated_at = now()
 WHERE id = $5
 RETURNING *;
+
+-- name: DeleteJuice :exec
+DELETE FROM juice 
+WHERE id = $1;
