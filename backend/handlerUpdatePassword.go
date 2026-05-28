@@ -9,8 +9,8 @@ import (
 )
 
 type update_password struct {
-	Password     string `json:"password"`
-	New_password string `json:"new_password"`
+	Password    string `json:"password"`
+	NewPassword string `json:"new_password"`
 }
 
 func (cfg *config) handlerUpdatePassword(w http.ResponseWriter, r *http.Request) {
@@ -44,8 +44,15 @@ func (cfg *config) handlerUpdatePassword(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, 401, "wrong password")
 		return
 	}
-
-	hashedPassword, err := auth.HashPassword(params.New_password)
+	if params.NewPassword == "" {
+		respondWithError(w, 400, "new password is required")
+		return
+	}
+	if params.NewPassword == params.Password {
+		respondWithError(w, 400, "passwords must be different")
+		return
+	}
+	hashedPassword, err := auth.HashPassword(params.NewPassword)
 	if err != nil {
 		respondWithError(w, 500, "could not hash password")
 		return
