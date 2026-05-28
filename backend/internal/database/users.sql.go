@@ -65,6 +65,18 @@ func (q *Queries) GetPasswordByEmail(ctx context.Context, email string) (User, e
 	return i, err
 }
 
+const getPasswordByUserID = `-- name: GetPasswordByUserID :one
+SELECT hashed_password FROM users
+WHERE ID = $1
+`
+
+func (q *Queries) GetPasswordByUserID(ctx context.Context, id uuid.UUID) (string, error) {
+	row := q.db.QueryRowContext(ctx, getPasswordByUserID, id)
+	var hashed_password string
+	err := row.Scan(&hashed_password)
+	return hashed_password, err
+}
+
 const getUserRole = `-- name: GetUserRole :one
 SELECT role FROM users
 WHERE id = $1
@@ -108,13 +120,12 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 	return i, err
 }
 
-const updateUserPassword = `-- name: UpdateUserPassword :one
+const updateUserPassword = `-- name: UpdateUserPassword :exec
 UPDATE users
 SET
     hashed_password = $1,
     updated_at = now()
 WHERE id = $2
-RETURNING id, username, email, hashed_password, created_at, updated_at, role
 `
 
 type UpdateUserPasswordParams struct {
@@ -122,17 +133,7 @@ type UpdateUserPasswordParams struct {
 	ID             uuid.UUID
 }
 
-func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, updateUserPassword, arg.HashedPassword, arg.ID)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.HashedPassword,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Role,
-	)
-	return i, err
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserPassword, arg.HashedPassword, arg.ID)
+	return err
 }

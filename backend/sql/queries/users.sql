@@ -14,6 +14,10 @@ RETURNING *;
 SELECT * FROM users
 WHERE email = $1;
 
+-- name: GetPasswordByUserID :one
+SELECT hashed_password FROM users
+WHERE ID = $1;
+
 -- name: GetUserRole :one
 SELECT role FROM users
 WHERE id = $1;
@@ -27,10 +31,9 @@ SET
 WHERE id = $3
 RETURNING *;
 
--- name: UpdateUserPassword :one
+-- name: UpdateUserPassword :exec
 UPDATE users
 SET
     hashed_password = $1,
     updated_at = now()
-WHERE id = $2
-RETURNING *;
+WHERE id = $2;
