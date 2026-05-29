@@ -255,3 +255,19 @@ func (q *Queries) UpdateJuice(ctx context.Context, arg UpdateJuiceParams) (Juice
 	)
 	return i, err
 }
+
+const updateJuiceImage = `-- name: UpdateJuiceImage :exec
+UPDATE juice
+SET image_url = $1
+WHERE id = $2
+`
+
+type UpdateJuiceImageParams struct {
+	ImageUrl string
+	ID       uuid.UUID
+}
+
+func (q *Queries) UpdateJuiceImage(ctx context.Context, arg UpdateJuiceImageParams) error {
+	_, err := q.db.ExecContext(ctx, updateJuiceImage, arg.ImageUrl, arg.ID)
+	return err
+}

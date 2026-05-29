@@ -14,8 +14,11 @@ import (
 )
 
 type config struct {
-	queries *database.Queries
-	secret  string
+	queries    *database.Queries
+	secret     string
+	assetsRoot string
+	port       string
+	baseURL    string
 }
 
 type User struct {
@@ -50,13 +53,29 @@ func main() {
 		log.Fatal(err)
 	}
 
+	assetsRoot := os.Getenv("ASSETS_ROOT")
+	if assetsRoot == "" {
+		log.Fatal("ASSETS_ROOT environment variable is not set")
+	}
+
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		log.Fatal("BASE_URL environment variable is not set")
+	}
+
 	dbQueries := database.New(db)
 	cfg := config{
-		queries: dbQueries,
-		secret:  secret,
+		queries:    dbQueries,
+		secret:     secret,
+		assetsRoot: assetsRoot,
+		port:       port,
+		baseURL:    baseURL,
 	}
 
 	ServeMux := http.NewServeMux()
+
+	assetsHandler := http.StripPrefix("/assets", http.FileServer(http.Dir(assetsRoot)))
+	ServeMux.Handle("/assets/", assetsHandler)
 
 	ServeMux.HandleFunc("POST /api/login", cfg.handlerLogin)
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)
@@ -72,6 +91,7 @@ func main() {
 	ServeMux.Handle("GET /api/admin/test", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminTest)))
 	ServeMux.Handle("POST /api/admin/juice", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAddJuice)))
 	ServeMux.Handle("PUT /api/admin/juice/{juiceID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerUpdateJuice)))
+	ServeMux.Handle("PUT /api/admin/juice/{juiceID}/image", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerUpdateJuiceImage)))
 	ServeMux.Handle("DELETE /api/admin/juice/{juiceID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerDeleteJuice)))
 
 	ServeMux.Handle("POST /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerOrderJuice)))

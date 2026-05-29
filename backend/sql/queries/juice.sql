@@ -42,6 +42,11 @@ SET
 WHERE id = $5
 RETURNING *;
 
+-- name: UpdateJuiceImage :exec
+UPDATE juice
+SET image_url = $1
+WHERE id = $2;
+
 -- name: DeleteJuice :exec
 DELETE FROM juice 
 WHERE id = $1;
