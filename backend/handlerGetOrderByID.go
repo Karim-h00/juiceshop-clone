@@ -16,13 +16,14 @@ func (cfg *config) handlerGetOrderByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := cfg.queries.GetOrderByOrderID(r.Context(), userID)
+	order, err := cfg.queries.GetOrderByOrderID(r.Context(), parsedID)
 	if err != nil {
 		respondWithError(w, 404, "order not found")
 		return
 	}
-	if order.ID != userID {
+	if order.UserID != userID {
 		respondWithError(w, 403, "forbidden")
+		return
 	}
 
 	items, err := cfg.queries.GetOrderItemsByOrderID(r.Context(), parsedID)

@@ -83,7 +83,7 @@ func main() {
 	ServeMux.Handle("POST /api/user/password", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerUpdatePassword)))
 
 	ServeMux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)
-	ServeMux.Handle("POST /api/logout", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerLogout)))
+	ServeMux.HandleFunc("POST /api/logout", cfg.handlerLogout)
 
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
 	ServeMux.HandleFunc("GET /api/juice/{juiceName}", cfg.handlerGetJuiceByName)
@@ -97,7 +97,7 @@ func main() {
 	ServeMux.Handle("POST /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerOrderJuice)))
 	ServeMux.Handle("GET /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetUserOrderHistory)))
 	ServeMux.Handle("GET /api/order/{orderID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetOrderByID)))
-	ServeMux.Handle("DELETE /api/order/{orderID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerDeleteOrder)))
+	ServeMux.Handle("DELETE /api/admin/order/{orderID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerDeleteOrder)))
 
 	server := &http.Server{
 		Addr:    ":" + port,

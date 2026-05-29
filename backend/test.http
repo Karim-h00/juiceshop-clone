@@ -19,6 +19,11 @@ Content-Type: application/json
 }
 
 @token = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refresh_token}}
+
+### Logout
+POST http://localhost:8080/api/logout
+Authorization: Bearer {{refreshToken}}
 
 ### Test Get Juice
 GET http://localhost:8080/api
@@ -30,6 +35,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 ### Test Order Juice
+# @name placeOrder
 POST http://localhost:8080/api/order
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -89,3 +95,13 @@ Authorization: Bearer {{token}}
     "price": 699,
     "stock": 100
 }
+
+@orderID = {{placeOrder.response.body.order_id}}
+
+### Get Order By ID
+GET http://localhost:8080/api/order/{{orderID}}
+Authorization: Bearer {{token}}
+
+### Delete Order (Admin)
+DELETE http://localhost:8080/api/admin/order/{{orderID}}
+Authorization: Bearer {{token}}
