@@ -45,6 +45,16 @@ type RefreshToken struct {
 	RevokedAt sql.NullTime
 }
 
+type Review struct {
+	ID        uuid.UUID
+	UserID    uuid.UUID
+	JuiceID   uuid.UUID
+	Rating    int32
+	Comment   sql.NullString
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type User struct {
 	ID             uuid.UUID
 	Username       string
