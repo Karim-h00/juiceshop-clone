@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -244,4 +245,28 @@ func (cfg *config) handlerDeleteOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(204)
+}
+
+func (cfg *config) handlerAdminGetAllOrders(w http.ResponseWriter, r *http.Request) {
+
+	page := 1
+
+	pageStr := r.URL.Query().Get("page")
+	if pageStr != "" {
+		parsedPage, err := strconv.Atoi(pageStr)
+		if err != nil {
+			respondWithError(w, 400, "invalid page number")
+			return
+		}
+		page = parsedPage
+	}
+	offset := (page - 1) * 10
+
+	orderData, err := cfg.queries.GetAllOrders(r.Context(), int32(offset))
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't get orders")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, orderData)
 }

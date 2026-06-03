@@ -69,9 +69,56 @@ func (q *Queries) DeleteOrderByOrderID(ctx context.Context, id uuid.UUID) error 
 	return err
 }
 
+const getAllOrders = `-- name: GetAllOrders :many
+SELECT orders.id, orders.total, orders.created_at, orders.user_id, users.username FROM orders
+JOIN users ON orders.user_id = users.id
+ORDER BY orders.created_at DESC
+LIMIT 10
+OFFSET $1
+`
+
+type GetAllOrdersRow struct {
+	ID        uuid.UUID
+	Total     int32
+	CreatedAt time.Time
+	UserID    uuid.UUID
+	Username  string
+}
+
+func (q *Queries) GetAllOrders(ctx context.Context, offset int32) ([]GetAllOrdersRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllOrders, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllOrdersRow
+	for rows.Next() {
+		var i GetAllOrdersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Total,
+			&i.CreatedAt,
+			&i.UserID,
+			&i.Username,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getOrderByOrderID = `-- name: GetOrderByOrderID :one
 SELECT id, total, created_at, user_id FROM orders 
 WHERE id = $1
+ORDER BY created_at DESC
+LIMIT 5
 `
 
 func (q *Queries) GetOrderByOrderID(ctx context.Context, id uuid.UUID) (Order, error) {

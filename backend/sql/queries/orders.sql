@@ -19,7 +19,16 @@ WHERE order_items.order_id = $1;
 
 -- name: GetOrderByOrderID :one
 SELECT * FROM orders 
-WHERE id = $1;
+WHERE id = $1
+ORDER BY created_at DESC
+LIMIT 5;
+
+-- name: GetAllOrders :many
+SELECT orders.*, users.username FROM orders
+JOIN users ON orders.user_id = users.id
+ORDER BY orders.created_at DESC
+LIMIT 10
+OFFSET $1;
 
 -- name: DeleteOrderByOrderID :exec
 DELETE FROM orders 

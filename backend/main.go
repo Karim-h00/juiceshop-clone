@@ -98,6 +98,7 @@ func main() {
 	ServeMux.Handle("GET /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetUserOrderHistory)))
 	ServeMux.Handle("GET /api/order/{orderID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetOrderByID)))
 	ServeMux.Handle("DELETE /api/admin/order/{orderID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerDeleteOrder)))
+	ServeMux.Handle("GET /api/admin/orders", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminGetAllOrders)))
 
 	ServeMux.HandleFunc("GET /api/juice/{juiceID}/reviews", cfg.handlerGetReviews)
 	ServeMux.Handle("POST /api/juice/{juiceID}/review", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerAddReview)))
