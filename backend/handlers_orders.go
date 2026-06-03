@@ -10,6 +10,17 @@ import (
 	"github.com/karim-h00/juiceshop-clone/internal/database"
 )
 
+type orderItems struct {
+	Name     string `json:"name"`
+	Quantity int32  `json:"quantity"`
+}
+type orderResponse struct {
+	OrderID   string       `json:"order_id"`
+	Total     int32        `json:"total"`
+	CreatedAt time.Time    `json:"created_at"`
+	Items     []orderItems `json:"items"`
+}
+
 func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 	type order_params struct {
 		Items []struct {
@@ -136,20 +147,14 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *config) handlerGetUserOrderHistory(w http.ResponseWriter, r *http.Request) {
-	type orderItems struct {
-		Name     string `json:"name"`
-		Quantity int32  `json:"quantity"`
-	}
-	type orderResponse struct {
-		OrderID   string       `json:"order_id"`
-		Total     int32        `json:"total"`
-		CreatedAt time.Time    `json:"created_at"`
-		Items     []orderItems `json:"items"`
-	}
 
 	userID := r.Context().Value(contextKeyUserID).(uuid.UUID)
 
-	orders, err := cfg.queries.GetOrdersByUserID(r.Context(), userID)
+	orders, err := cfg.queries.GetOrdersByUserID(r.Context(), database.GetOrdersByUserIDParams{
+		UserID: userID,
+		Limit:  5,
+		Offset: 0,
+	})
 	if err != nil {
 		respondWithError(w, 500, "Could not fetch orders")
 		return
@@ -180,16 +185,6 @@ func (cfg *config) handlerGetUserOrderHistory(w http.ResponseWriter, r *http.Req
 }
 
 func (cfg *config) handlerGetOrderByID(w http.ResponseWriter, r *http.Request) {
-	type orderItems struct {
-		Name     string `json:"name"`
-		Quantity int32  `json:"quantity"`
-	}
-	type orderResponse struct {
-		OrderID   string       `json:"order_id"`
-		Total     int32        `json:"total"`
-		CreatedAt time.Time    `json:"created_at"`
-		Items     []orderItems `json:"items"`
-	}
 
 	userID := r.Context().Value(contextKeyUserID).(uuid.UUID)
 	orderID := r.PathValue("orderID")
@@ -269,4 +264,61 @@ func (cfg *config) handlerAdminGetAllOrders(w http.ResponseWriter, r *http.Reque
 	}
 
 	respondWithJSON(w, http.StatusOK, orderData)
+}
+
+func (cfg *config) handlerAdminGetUserOrders(w http.ResponseWriter, r *http.Request) {
+
+	userIDstr := r.PathValue("userID")
+	userID, err := uuid.Parse(userIDstr)
+	if err != nil {
+		respondWithError(w, 400, "failed to parse ID")
+		return
+	}
+
+	page := 1
+
+	pageStr := r.URL.Query().Get("page")
+	if pageStr != "" {
+		parsedPage, err := strconv.Atoi(pageStr)
+		if err != nil {
+			respondWithError(w, 400, "invalid page number")
+			return
+		}
+		page = parsedPage
+	}
+	offset := (page - 1) * 10
+
+	ordersData, err := cfg.queries.GetOrdersByUserID(r.Context(), database.GetOrdersByUserIDParams{
+		UserID: userID,
+		Limit:  10,
+		Offset: int32(offset),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't get orders")
+		return
+	}
+
+	result := make([]orderResponse, len(ordersData))
+	for i, order := range ordersData {
+		items, err := cfg.queries.GetOrderItemsByOrderID(r.Context(), order.ID)
+		if err != nil {
+			respondWithError(w, 500, "Could not fetch order items")
+			return
+		}
+		itemsResp := make([]orderItems, len(items))
+		for j, item := range items {
+			itemsResp[j] = orderItems{
+				Name:     item.Name,
+				Quantity: item.Quantity,
+			}
+		}
+		result[i] = orderResponse{
+			OrderID:   order.ID.String(),
+			Total:     order.Total,
+			CreatedAt: order.CreatedAt,
+			Items:     itemsResp,
+		}
+	}
+
+	respondWithJSON(w, http.StatusOK, result)
 }

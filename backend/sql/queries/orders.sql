@@ -10,7 +10,10 @@ RETURNING *;
 
 -- name: GetOrdersByUserID :many
 SELECT id, created_at, total FROM orders
-WHERE user_id = $1;
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT $2
+OFFSET $3;
 
 -- name: GetOrderItemsByOrderID :many
 SELECT juice_id, quantity, juice.name FROM order_items
@@ -19,9 +22,7 @@ WHERE order_items.order_id = $1;
 
 -- name: GetOrderByOrderID :one
 SELECT * FROM orders 
-WHERE id = $1
-ORDER BY created_at DESC
-LIMIT 5;
+WHERE id = $1;
 
 -- name: GetAllOrders :many
 SELECT orders.*, users.username FROM orders

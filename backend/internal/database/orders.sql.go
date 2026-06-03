@@ -117,8 +117,6 @@ func (q *Queries) GetAllOrders(ctx context.Context, offset int32) ([]GetAllOrder
 const getOrderByOrderID = `-- name: GetOrderByOrderID :one
 SELECT id, total, created_at, user_id FROM orders 
 WHERE id = $1
-ORDER BY created_at DESC
-LIMIT 5
 `
 
 func (q *Queries) GetOrderByOrderID(ctx context.Context, id uuid.UUID) (Order, error) {
@@ -171,7 +169,16 @@ func (q *Queries) GetOrderItemsByOrderID(ctx context.Context, orderID uuid.UUID)
 const getOrdersByUserID = `-- name: GetOrdersByUserID :many
 SELECT id, created_at, total FROM orders
 WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT $2
+OFFSET $3
 `
+
+type GetOrdersByUserIDParams struct {
+	UserID uuid.UUID
+	Limit  int32
+	Offset int32
+}
 
 type GetOrdersByUserIDRow struct {
 	ID        uuid.UUID
@@ -179,8 +186,8 @@ type GetOrdersByUserIDRow struct {
 	Total     int32
 }
 
-func (q *Queries) GetOrdersByUserID(ctx context.Context, userID uuid.UUID) ([]GetOrdersByUserIDRow, error) {
-	rows, err := q.db.QueryContext(ctx, getOrdersByUserID, userID)
+func (q *Queries) GetOrdersByUserID(ctx context.Context, arg GetOrdersByUserIDParams) ([]GetOrdersByUserIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, getOrdersByUserID, arg.UserID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
