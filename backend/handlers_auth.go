@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -9,14 +10,14 @@ import (
 	"github.com/karim-h00/juiceshop-clone/internal/database"
 )
 
-type Login_parameters struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
+
+	type Login_parameters struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 	decoder := json.NewDecoder(r.Body)
-	params := User_parameters{}
+	params := Login_parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, 400, "Error decoding params")
@@ -75,4 +76,48 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Token:        user_token,
 		RefreshToken: refreshTokenStr,
 	})
+}
+
+func (cfg *config) handlerLogout(w http.ResponseWriter, r *http.Request) {
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized")
+		return
+	}
+
+	err = cfg.queries.RevokeRefreshToken(r.Context(), database.RevokeRefreshTokenParams{
+		Token:     token,
+		UpdatedAt: time.Now().UTC(),
+		RevokedAt: sql.NullTime{Time: time.Now().UTC(), Valid: true},
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't revoke refresh token")
+		return
+	}
+	respondWithJSON(w, http.StatusOK, "Logged out")
+}
+
+func (cfg *config) handlerRefresh(w http.ResponseWriter, r *http.Request) {
+	refreshToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized")
+		return
+	}
+
+	user, err := cfg.queries.GetUserFromRefreshToken(r.Context(), refreshToken)
+	if err != nil {
+		respondWithError(w, 401, "Invalid or expired refresh token")
+		return
+	}
+
+	newToken, err := auth.MakeJWT(user.ID, cfg.secret, time.Hour, user.Role)
+	if err != nil {
+		respondWithError(w, 500, "Could not create token")
+		return
+	}
+
+	respondWithJSON(w, 200, struct {
+		Token string `json:"token"`
+	}{Token: newToken})
 }
