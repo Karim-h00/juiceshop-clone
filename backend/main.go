@@ -105,9 +105,11 @@ func main() {
 	ServeMux.Handle("POST /api/juice/{juiceID}/review", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerAddReview)))
 	ServeMux.Handle("DELETE /api/juice/{juiceID}/review/{reviewID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerDeleteReview)))
 
+	handler := middlewareCORS(ServeMux)
+
 	server := &http.Server{
 		Addr:    ":" + port,
-		Handler: ServeMux,
+		Handler: handler,
 	}
 
 	log.Printf("Serving on: http://localhost:%s/api/\n", port)
