@@ -1,5 +1,5 @@
 import { useJuice } from "../hooks/useJuice"
-import { NavLink } from "react-router-dom"
+import { Link } from "react-router-dom"
 
 type juiceData = {
     ID: string,
@@ -25,27 +25,34 @@ function Home() {
     console.log(data)
     return (
         <>
-            {data.map((item: juiceData) => (
-                <div className="bg-neutral-700 rounded-md w-68 h-auto mb-4 p-5" key={item.ID}>
-                    <NavLink to={'#'}>
-                        <img className="rounded-md" src={`${item.ImageUrl}`} />
-                    </NavLink>
-                    <NavLink to="">
-                        <h4 className="mt-6 mb-2 text-2xl font-semibold tracking-tight text-heading">
-                            {item.Name}
-                        </h4>
-                    </NavLink>
-                    <p className="mb-6 text-body">
-                        {item.Description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                        <span className="text-3xl font-extrabold text-heading">${(item.Price/100)}</span>
+        <div className="container mx-auto px-4 py-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {data.map((item: juiceData) => (
+                    <div className="w-full max-w-xs rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg dark:border-gray-700 dark:bg-gray-800" key={item.ID}>
+                        <img
+                            src={item.ImageUrl}
+                            alt={item.Name}
+                            className="h-48 w-full rounded-t-xl object-cover"
+                        />
+
+                        <div className="p-4 space-y-2">
+                            <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">{item.Name}</h3>
+                            <p className="text-sm text-gray-600 line-clamp-2 dark:text-gray-300">
+                                {item.Description}
+                            </p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">${(item.Price / 100).toFixed(2)}</p>
+
+                            <Link
+                                to={`/juice/${item.ID}`}
+                                className="mt-2 block w-full rounded bg-emerald-600 py-2 text-center text-sm font-medium text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
+                            >
+                                View Details
+                            </Link>
+                        </div>
                     </div>
-                    <button type="button" className="items-center text-white bg-blue-600 px-3 py-2 rounded-xl">
-                        Add to Cart
-                    </button>
-                </div>
-            ))}
+                ))}
+            </div>
+        </div>
         </>
     )
 

@@ -28,3 +28,16 @@ export const signup = async (credentials: SigunpCredentials): Promise<SignupRes>
     }
     return response.json()
 }
+
+export const logout = async (rt: string): Promise<void> => {
+    const response = await fetch (`${BASE_URL}/api/logout`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${rt}`
+        },
+    })
+    if (!response.ok){
+        throw new Error('logout failed')
+    }
+}

@@ -6,9 +6,9 @@ function App() {
 
   return (
     <>
-    <div className='min-h-screen flex flex-col'>
+    <div className='min-h-screen flex flex-col dark:bg-gray-900'>
       <Navbar />
-      <main className='flex-1 bg-white dark:bg-gray-800 container mx-auto px-4 py-6'>
+      <main className='flex-1 bg-white dark:bg-gray-800'>
         <Outlet />
       </main>
     </div>
