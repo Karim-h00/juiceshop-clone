@@ -3,6 +3,7 @@ import { useLogin } from "../hooks/useLogin"
 import { type LoginCredentials } from "../types";
 import useAuthStore from "../store/authStore";
 import { useNavigate } from 'react-router-dom';
+import { getMe } from "../api/auth";
 
 function Login() {
 
@@ -13,26 +14,14 @@ function Login() {
   const handleLogin = useLogin();
   const navigate = useNavigate()
 
-  const setAuthStore = useAuthStore((s) => s.setAuthStore)
-
-  const decodeRole = (token: string): string => {
-    try {
-      const [, payload] = token.split('.');
-      return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).role;
-    } catch {
-      throw new Error('Invalid token payload');
-    }
-  };
+  const setUser = useAuthStore((s) => s.setUser)
 
   const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
     handleLogin.mutate(credentials, {
-      onSuccess: ({ username, email, token, refreshToken }) => {
-        const role = decodeRole(token)
-        setAuthStore(token, refreshToken, username, email, role)
-
-        const { token: t, refreshToken: rt, user: u } = useAuthStore.getState();
-        console.log('AuthStore after update:', { token: t, refreshToken: rt, user: u });
+      onSuccess: async () => {
+        const me = await getMe()
+        setUser({username: me.username, email: me.email, role: me.role})
         navigate('/')
       }
     })

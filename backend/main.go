@@ -22,13 +22,12 @@ type config struct {
 }
 
 type User struct {
-	ID           uuid.UUID `json:"id"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Email        string    `json:"email"`
-	Username     string    `json:"username"`
-	Token        string    `json:"token"`
-	RefreshToken string    `json:"refresh_token"`
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username"`
+	Role      string    `json:"role"`
 }
 
 func main() {
@@ -84,6 +83,7 @@ func main() {
 
 	ServeMux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)
 	ServeMux.HandleFunc("POST /api/logout", cfg.handlerLogout)
+	ServeMux.Handle("GET /api/me", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerMe)))
 
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
 	ServeMux.HandleFunc("GET /api/juice/{juiceName}", cfg.handlerGetJuiceByName)

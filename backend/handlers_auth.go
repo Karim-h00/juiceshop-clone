@@ -67,14 +67,33 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    user_token,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+		MaxAge:   int(defaultExpiry.Seconds()),
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshTokenStr,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/auth/refresh",
+		MaxAge:   60 * 24 * 60 * 60,
+	})
+
 	respondWithJSON(w, 200, User{
-		ID:           user_data.ID,
-		Email:        user_data.Email,
-		Username:     user_data.Username,
-		CreatedAt:    user_data.CreatedAt,
-		UpdatedAt:    user_data.UpdatedAt,
-		Token:        user_token,
-		RefreshToken: refreshTokenStr,
+		ID:        user_data.ID,
+		Email:     user_data.Email,
+		Username:  user_data.Username,
+		CreatedAt: user_data.CreatedAt,
+		UpdatedAt: user_data.UpdatedAt,
+		Role:      user_data.Role,
 	})
 }
 
@@ -99,13 +118,13 @@ func (cfg *config) handlerLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *config) handlerRefresh(w http.ResponseWriter, r *http.Request) {
-	refreshToken, err := auth.GetBearerToken(r.Header)
+	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
 		respondWithError(w, 401, "Unauthorized")
 		return
 	}
 
-	user, err := cfg.queries.GetUserFromRefreshToken(r.Context(), refreshToken)
+	user, err := cfg.queries.GetUserFromRefreshToken(r.Context(), cookie.Value)
 	if err != nil {
 		respondWithError(w, 401, "Invalid or expired refresh token")
 		return
@@ -117,7 +136,46 @@ func (cfg *config) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    newToken,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+		MaxAge:   int(time.Hour.Seconds()),
+	})
+
 	respondWithJSON(w, 200, struct {
 		Token string `json:"token"`
 	}{Token: newToken})
+}
+
+func (cfg *config) handlerMe(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("access_token")
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized")
+		return
+	}
+
+	userID, _, err := auth.ValidateJWT(cookie.Value, cfg.secret)
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized")
+		return
+	}
+
+	user, err := cfg.queries.GetUserByID(r.Context(), userID)
+	if err != nil {
+		respondWithError(w, 404, "User not found")
+		return
+	}
+
+	respondWithJSON(w, 200, User{
+		ID:        user.ID,
+		Email:     user.Email,
+		Username:  user.Username,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	})
 }

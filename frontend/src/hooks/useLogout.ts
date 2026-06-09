@@ -4,15 +4,15 @@ import useAuthStore from "../store/authStore";
 
 
 export const useLogout = () => {
-    const refreshToken = useAuthStore((s) => s.refreshToken);
-    const clearStore = useAuthStore((s) => s.logout);
-    return useMutation({
-        mutationFn: () => {
-            if (!refreshToken) throw new Error("No refresh token");
-            return logout(refreshToken);
-        },
-        onSuccess:() => {
-            clearStore()
-        }
-    })
+  const clearAuth = useAuthStore((s) => s.clearAuth)
+  return useMutation({
+    mutationFn: () => logout(),
+    onSuccess: () => {
+      clearAuth()
+    },
+    onError: (error) => {
+      console.log('logout error', error)
+      clearAuth()
+    }
+  })
 }

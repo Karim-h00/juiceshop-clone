@@ -4,19 +4,28 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/karim-h00/juiceshop-clone/internal/auth"
 )
 
+func getTokenFromCookie(r *http.Request, secret string) (userID uuid.UUID, role string, token string, err error) {
+	cookie, err := r.Cookie("access_token")
+	if err != nil {
+		return uuid.UUID{}, "", "", err
+	}
+	userID, role, err = auth.ValidateJWT(cookie.Value, secret)
+	if err != nil {
+		return uuid.UUID{}, "", "", err
+	}
+	return userID, role, cookie.Value, nil
+}
+
 func (cfg *config) middlewareCheckAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, err := auth.GetBearerToken(r.Header)
+
+		userID, tokenRole, _, err := getTokenFromCookie(r, cfg.secret)
 		if err != nil {
 			respondWithError(w, 401, "Unauthorized")
-			return
-		}
-		userID, tokenRole, err := auth.ValidateJWT(token, cfg.secret)
-		if err != nil {
-			respondWithError(w, 400, "Could not make session")
 			return
 		}
 
@@ -48,12 +57,8 @@ const (
 
 func (cfg *config) middlewareAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, err := auth.GetBearerToken(r.Header)
-		if err != nil {
-			respondWithError(w, 401, "Unauthorized")
-			return
-		}
-		userID, tokenRole, err := auth.ValidateJWT(token, cfg.secret)
+
+		userID, token, tokenRole, err := getTokenFromCookie(r, cfg.secret)
 		if err != nil {
 			respondWithError(w, 400, "Could not make session")
 			return
@@ -71,6 +76,7 @@ func middlewareCORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-credentials", "true")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)

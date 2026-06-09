@@ -6,8 +6,6 @@ export type LoginCredentials = {
 export type LoginRes = {
     username: string,
     email: string,
-    token: string,
-    refreshToken: string
 }
 
 type UUID = string & { __brand: 'UUID' };
@@ -24,4 +22,13 @@ export type SignupRes = {
     updatedAt: string
     email: string,
     username: string
+}
+
+export type MeRes = {
+  id: string
+  username: string
+  email: string
+  role: string
+  created_at: string
+  updated_at: string
 }

@@ -1,5 +1,5 @@
 import { BASE_URL } from './config'
-import { type LoginCredentials, type LoginRes, type SigunpCredentials, type SignupRes } from '../types'
+import { type LoginCredentials, type LoginRes, type SigunpCredentials, type SignupRes, type MeRes } from '../types'
 
 export const login = async (credentials: LoginCredentials): Promise<LoginRes> => {
     const response = await fetch(`${BASE_URL}/api/login`, {
@@ -8,6 +8,7 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRes> =>
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(credentials),
+        credentials: "include"
     })
     if (!response.ok) {
         throw new Error('Login failed')
@@ -21,7 +22,8 @@ export const signup = async (credentials: SigunpCredentials): Promise<SignupRes>
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials)
+        body: JSON.stringify(credentials),
+        credentials: 'include',
     })
     if (!response.ok){
         throw new Error('signup failed')
@@ -29,15 +31,23 @@ export const signup = async (credentials: SigunpCredentials): Promise<SignupRes>
     return response.json()
 }
 
-export const logout = async (rt: string): Promise<void> => {
+export const logout = async (): Promise<void> => {
     const response = await fetch (`${BASE_URL}/api/logout`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${rt}`
         },
+        credentials: 'include',
     })
     if (!response.ok){
         throw new Error('logout failed')
     }
+}
+
+export const getMe = async (): Promise<MeRes> => {
+  const response = await fetch(`${BASE_URL}/api/me`, {
+    credentials: 'include',
+  })
+  if (!response.ok) throw new Error('Not authenticated')
+  return response.json()
 }

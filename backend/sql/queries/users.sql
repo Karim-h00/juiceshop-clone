@@ -37,3 +37,7 @@ SET
     hashed_password = $1,
     updated_at = now()
 WHERE id = $2;
+
+-- name: GetUserByID :one
+SELECT * from users
+WHERE id = $1;
