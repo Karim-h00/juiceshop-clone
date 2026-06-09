@@ -3,7 +3,6 @@ import { useLogin } from "../hooks/useLogin"
 import { type LoginCredentials } from "../types";
 import useAuthStore from "../store/authStore";
 import { useNavigate } from 'react-router-dom';
-import { getMe } from "../api/auth";
 
 function Login() {
 
@@ -14,14 +13,19 @@ function Login() {
   const handleLogin = useLogin();
   const navigate = useNavigate()
 
-  const setUser = useAuthStore((s) => s.setUser)
+  const setAuth = useAuthStore((s) => s.setAuth)
+
+  const decodeToken = (token: string) => {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return payload
+  }
 
   const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
     handleLogin.mutate(credentials, {
-      onSuccess: async () => {
-        const me = await getMe()
-        setUser({username: me.username, email: me.email, role: me.role})
+      onSuccess: async (data) => {
+        const payload = decodeToken(data.token)
+        setAuth(data.token, {username: data.username, email: data.email, role: payload.role})
         navigate('/')
       }
     })

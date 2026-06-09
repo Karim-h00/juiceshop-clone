@@ -7,16 +7,18 @@ type User = {
 }
 
 type AuthStore = {
+    token: string | null
     user: User | null
     isLoading: boolean
-    setUser:(user: User) =>  void
+    setAuth: (token: string, user: User) => void
     clearAuth: () => void
 }
 
 const useAuthStore = create<AuthStore>((set) => ({
+    token: null,
     user: null,
     isLoading: true,
-    setUser: (user)=>set({user, isLoading: false}),
+    setAuth: (token, user) => set({ token, user, isLoading: false }),
     clearAuth: () => set({ user: null, isLoading: false }),
 }))
 

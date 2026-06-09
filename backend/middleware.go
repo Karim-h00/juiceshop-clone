@@ -58,9 +58,15 @@ const (
 func (cfg *config) middlewareAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		userID, token, tokenRole, err := getTokenFromCookie(r, cfg.secret)
+		token, err := auth.GetBearerToken(r.Header)
 		if err != nil {
-			respondWithError(w, 400, "Could not make session")
+			respondWithError(w, 401, "Unauthorized")
+			return
+		}
+
+		userID, tokenRole, err := auth.ValidateJWT(token, cfg.secret)
+		if err != nil {
+			respondWithError(w, 401, "Unauthorized")
 			return
 		}
 
@@ -76,7 +82,7 @@ func middlewareCORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		w.Header().Set("Access-Control-Allow-credentials", "true")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)

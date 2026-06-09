@@ -6,6 +6,7 @@ export type LoginCredentials = {
 export type LoginRes = {
     username: string,
     email: string,
+    token: string
 }
 
 type UUID = string & { __brand: 'UUID' };

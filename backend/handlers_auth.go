@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/karim-h00/juiceshop-clone/internal/auth"
 	"github.com/karim-h00/juiceshop-clone/internal/database"
 )
@@ -68,22 +69,12 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    user_token,
-		HttpOnly: true,
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
-		Path:     "/",
-		MaxAge:   int(defaultExpiry.Seconds()),
-	})
-
-	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshTokenStr,
 		HttpOnly: true,
 		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
-		Path:     "/auth/refresh",
+		Path:     "/",
 		MaxAge:   60 * 24 * 60 * 60,
 	})
 
@@ -93,20 +84,19 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Username:  user_data.Username,
 		CreatedAt: user_data.CreatedAt,
 		UpdatedAt: user_data.UpdatedAt,
-		Role:      user_data.Role,
+		Token:     user_token,
 	})
 }
 
 func (cfg *config) handlerLogout(w http.ResponseWriter, r *http.Request) {
-
-	token, err := auth.GetBearerToken(r.Header)
+	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
 	err = cfg.queries.RevokeRefreshToken(r.Context(), database.RevokeRefreshTokenParams{
-		Token:     token,
+		Token:     cookie.Value,
 		UpdatedAt: time.Now().UTC(),
 		RevokedAt: sql.NullTime{Time: time.Now().UTC(), Valid: true},
 	})
@@ -114,7 +104,17 @@ func (cfg *config) handlerLogout(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "couldn't revoke refresh token")
 		return
 	}
-	respondWithJSON(w, http.StatusOK, "Logged out")
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+		MaxAge:   -1,
+	})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (cfg *config) handlerRefresh(w http.ResponseWriter, r *http.Request) {
@@ -136,33 +136,13 @@ func (cfg *config) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    newToken,
-		HttpOnly: true,
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
-		Path:     "/",
-		MaxAge:   int(time.Hour.Seconds()),
-	})
-
 	respondWithJSON(w, 200, struct {
 		Token string `json:"token"`
 	}{Token: newToken})
 }
 
 func (cfg *config) handlerMe(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("access_token")
-	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
-		return
-	}
-
-	userID, _, err := auth.ValidateJWT(cookie.Value, cfg.secret)
-	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
-		return
-	}
+	userID := r.Context().Value(contextKeyUserID).(uuid.UUID)
 
 	user, err := cfg.queries.GetUserByID(r.Context(), userID)
 	if err != nil {
@@ -174,7 +154,6 @@ func (cfg *config) handlerMe(w http.ResponseWriter, r *http.Request) {
 		ID:        user.ID,
 		Email:     user.Email,
 		Username:  user.Username,
-		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	})

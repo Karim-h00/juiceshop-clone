@@ -27,7 +27,7 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
 	Username  string    `json:"username"`
-	Role      string    `json:"role"`
+	Token     string    `json:"token"`
 }
 
 func main() {

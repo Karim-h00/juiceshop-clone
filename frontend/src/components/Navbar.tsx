@@ -5,7 +5,7 @@ import { useLogout } from '../hooks/useLogout';
 
 const Navbar = () => {
 
-  const { user } = useAuthStore()
+  const { user, isLoading } = useAuthStore()
   const [open, setOpen] = useState(false)
   const { mutate: logout } = useLogout();
   const navigate = useNavigate()
@@ -27,6 +27,8 @@ const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   },[])
+
+  // if(isLoading) return null
 
   return (
     <nav className={`flex h-16 items-center justify-between px-6 ${isHome

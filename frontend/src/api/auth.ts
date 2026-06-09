@@ -17,7 +17,7 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRes> =>
 }
 
 export const signup = async (credentials: SigunpCredentials): Promise<SignupRes> => {
-    const response = await fetch (`${BASE_URL}/api/signup`, {
+    const response = await fetch(`${BASE_URL}/api/signup`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -25,29 +25,39 @@ export const signup = async (credentials: SigunpCredentials): Promise<SignupRes>
         body: JSON.stringify(credentials),
         credentials: 'include',
     })
-    if (!response.ok){
+    if (!response.ok) {
         throw new Error('signup failed')
     }
     return response.json()
 }
 
 export const logout = async (): Promise<void> => {
-    const response = await fetch (`${BASE_URL}/api/logout`, {
+    const response = await fetch(`${BASE_URL}/api/logout`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         credentials: 'include',
     })
-    if (!response.ok){
+    if (!response.ok) {
         throw new Error('logout failed')
     }
 }
 
-export const getMe = async (): Promise<MeRes> => {
-  const response = await fetch(`${BASE_URL}/api/me`, {
-    credentials: 'include',
-  })
-  if (!response.ok) throw new Error('Not authenticated')
-  return response.json()
+export const refresh = async (): Promise<string> => {
+    const response = await fetch(`${BASE_URL}/api/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+    })
+    if (!response.ok) throw new Error('Refresh failed')
+    const data = await response.json()
+    return data.token
+}
+
+export const getMe = async (token: string): Promise<MeRes> => {
+    const response = await fetch(`${BASE_URL}/api/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (!response.ok) throw new Error('Not authenticated')
+    return response.json()
 }
