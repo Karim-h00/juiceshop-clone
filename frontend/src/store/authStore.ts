@@ -14,12 +14,10 @@ type AuthStore = {
     clearAuth: () => void
 }
 
-const useAuthStore = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>((set) => ({
     token: null,
     user: null,
     isLoading: true,
     setAuth: (token, user) => set({ token, user, isLoading: false }),
     clearAuth: () => set({ user: null, isLoading: false }),
 }))
-
-export default useAuthStore

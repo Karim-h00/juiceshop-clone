@@ -1,6 +1,6 @@
 import Hero from "../components/Hero"
 import { useJuice } from "../hooks/useJuice"
-import { Link } from "react-router-dom"
+import { useCartStore } from "../store/cartStore"
 
 type juiceData = {
     ID: string,
@@ -13,6 +13,7 @@ type juiceData = {
 
 function Home() {
     const { data, isLoading, isError, error } = useJuice()
+    const { addItem } = useCartStore()
 
     if (isLoading) {
         console.log("loading")
@@ -44,12 +45,17 @@ function Home() {
                             </p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">${(item.Price / 100).toFixed(2)}</p>
 
-                            <Link
-                                to={`/juice/${item.ID}`}
+                            <button
+                                onClick={()=>addItem({
+                                    id: item.ID,
+                                    name: item.Name,
+                                    price: item.Price,
+                                    image: item.ImageUrl
+                                })}
                                 className="mt-2 block w-full rounded bg-emerald-600 py-2 text-center text-sm font-medium text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                             >
-                                View Details
-                            </Link>
+                                Add to cart
+                            </button>
                         </div>
                     </div>
                 ))}

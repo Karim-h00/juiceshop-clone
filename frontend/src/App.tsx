@@ -3,7 +3,7 @@ import Navbar from './components/Navbar'
 import './index.css'
 import { useEffect } from 'react'
 import { getMe, refresh } from './api/auth'
-import useAuthStore from './store/authStore'
+import { useAuthStore } from './store/authStore'
 
 function App() {
 

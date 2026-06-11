@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useLogin } from "../hooks/useLogin"
 import { type LoginCredentials } from "../types";
-import useAuthStore from "../store/authStore";
+import { useAuthStore } from "../store/authStore";
 import { useNavigate } from 'react-router-dom';
 
 function Login() {
