@@ -7,10 +7,6 @@ export const checkout = async () => {
     const token = useAuthStore.getState().token
     const items = useCartStore.getState().items
 
-    console.log("token:", token)
-    console.log("items:", items)
-    console.log("body:", JSON.stringify(items))
-
     const response = await fetch(`${BASE_URL}/api/order`, {
         method: "POST",
         headers: {
@@ -28,6 +24,53 @@ export const checkout = async () => {
     if (!response.ok) {
         throw new Error('Failed to checkout')
     }
-    const data = await response.json
-    return data
+    return response.json()
+}
+
+export const getOrderHistory = async () => {
+    const token = useAuthStore.getState().token
+
+    const response = await fetch(`${BASE_URL}/api/order`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        }
+    })
+    if (!response.ok) {
+        throw new Error('Failed to get order history')
+    }
+    return response.json()
+}
+
+export const getOrderByID = async (orderID: string) => {
+    const token = useAuthStore.getState().token
+
+    const response = await fetch(`${BASE_URL}/api/order/${orderID}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        }
+    })
+    if (!response.ok) {
+        throw new Error('Failed to get order')
+    }
+    return response.json()
+}
+
+export const getAdminOrders = async (page?: number) => {
+    const token = useAuthStore.getState().token
+    const url = new URL(`${BASE_URL}/api/admin/orders`)
+    if (page) url.searchParams.set("page", page.toString())
+    
+    const response = await fetch(url.toString(), {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    })
+    if (!response.ok) {
+        throw new Error('Failed to get orders')
+    }
+    return response.json()
 }

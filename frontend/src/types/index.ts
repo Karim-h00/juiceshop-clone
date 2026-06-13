@@ -33,3 +33,13 @@ export type MeRes = {
   created_at: string
   updated_at: string
 }
+
+export type juiceData = {
+    ID: string,
+    ImageUrl: string,
+    created_at: string,
+    Name: string,
+    Description: string,
+    Price: number
+    Stock: string
+}
