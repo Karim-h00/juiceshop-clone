@@ -6,6 +6,10 @@ ORDER BY created_at ASC;
 SELECT * FROM juice
 WHERE id = $1;
 
+-- name: GetJuiceDetails :one
+SELECT * FROM juice
+WHERE name = $1;
+
 -- name: GetJuicesByIDs :many
 SELECT name, id, price, stock FROM juice WHERE id = ANY(@ids::uuid[]);
 

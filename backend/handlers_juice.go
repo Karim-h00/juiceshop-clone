@@ -37,7 +37,7 @@ func (cfg *config) handlerGetJuice(w http.ResponseWriter, r *http.Request) {
 func (cfg *config) handlerGetJuiceByName(w http.ResponseWriter, r *http.Request) {
 	juiceName := r.PathValue("juiceName")
 
-	data, err := cfg.queries.GetJuiceByName(r.Context(), juiceName)
+	data, err := cfg.queries.GetJuiceDetails(r.Context(), juiceName)
 	if err != nil {
 		respondWithError(w, 500, "Error retrieving Juice")
 		return

@@ -34,12 +34,24 @@ export type MeRes = {
   updated_at: string
 }
 
-export type juiceData = {
+export type JuiceData = {
     ID: string,
     ImageUrl: string,
     created_at: string,
     Name: string,
     Description: string,
     Price: number
-    Stock: string
+    Stock: number
+}
+
+export type OrderItem = {
+  name: string
+  quantity: number
+}
+
+export type Order = {
+  order_id: string
+  total: number
+  created_at: string
+  items: OrderItem[]
 }

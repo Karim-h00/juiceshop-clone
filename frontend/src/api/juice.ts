@@ -1,6 +1,6 @@
 import { useAuthStore } from '../store/authStore'
 import { BASE_URL } from './config'
-import { type juiceData } from '../types'
+import { type JuiceData } from '../types'
 
 export const getJuices = async () => {
     const response = await fetch(`${BASE_URL}/api`)
@@ -10,12 +10,14 @@ export const getJuices = async () => {
     return response.json()
 }
 
-export const getJuiceByName = async(juiceName: string) => {
-    const response = await fetch(`${BASE_URL}/api/${juiceName}`)
+export const getJuiceByName = async(juiceName: string): Promise<JuiceData> => {
+    const response = await fetch(`${BASE_URL}/api/juice/${juiceName}`)
     if (!response.ok) {
         throw new Error('Failed to fetch juice data')
     }
-    return response.json()
+    let data = response.json()
+    console.log(data)
+    return data
 }
 
 export const deleteJuice = async (juiceID: string) => {
@@ -34,7 +36,7 @@ export const deleteJuice = async (juiceID: string) => {
     return response.json()
 }
 
-export const addJuice = async(juiceData: juiceData)=>{
+export const addJuice = async(juiceData: JuiceData)=>{
     const token = useAuthStore.getState().token
 
     const response = await fetch(`${BASE_URL}/api/admin/juice`, {
@@ -55,7 +57,7 @@ export const addJuice = async(juiceData: juiceData)=>{
     }
 }
 
-export const updateJuice = async(juiceData: juiceData) => {
+export const updateJuice = async(juiceData: JuiceData) => {
     const token = useAuthStore.getState().token
 
     const response = await fetch(`${BASE_URL}/api/admin/juice/${juiceData.ID}`, {
