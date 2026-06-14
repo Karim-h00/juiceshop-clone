@@ -4,6 +4,9 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import JuiceDetails from "../pages/JuiceDetails";
 import OrderHistory from "../pages/OrderHistory";
+import AdminLayout from "../pages/AdminLayout";
+import AdminProducts from "../pages/AdminProducts";
+import Signup from "../pages/Signup";
 
 export const routes = [
     {
@@ -22,6 +25,13 @@ export const routes = [
     },
     {
         path: 'signup',
-        element: <Login />
+        element: <Signup />
+    },
+    {
+        path: '/admin',
+        element: <AdminLayout />,
+        children: [
+            {index: true, element:<AdminProducts />},
+        ]
     }
 ]

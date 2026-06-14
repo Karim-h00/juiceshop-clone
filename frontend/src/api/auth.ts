@@ -17,7 +17,7 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRes> =>
 }
 
 export const signup = async (credentials: SigunpCredentials): Promise<SignupRes> => {
-    const response = await fetch(`${BASE_URL}/api/signup`, {
+    const response = await fetch(`${BASE_URL}/api/users`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
