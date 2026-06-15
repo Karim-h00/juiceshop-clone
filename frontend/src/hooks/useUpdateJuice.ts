@@ -1,9 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
 import { updateJuice } from "../api/juice";
-import { type JuiceData } from "../types";
+import { type JuiceUpdateParams } from "../types";
+
+type UpdateJuiceVariables = {
+  id: string
+  juiceData: JuiceUpdateParams
+}
 
 export const useUpdateJuice = () =>{
     return useMutation({
-        mutationFn: (juiceData: JuiceData) => updateJuice(juiceData),
+        mutationFn: ({id, juiceData}: UpdateJuiceVariables) => updateJuice(id, juiceData),
     })
 }

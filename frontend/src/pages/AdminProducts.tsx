@@ -1,18 +1,41 @@
+import { useQueryClient } from "@tanstack/react-query"
+import JuiceTableRow from "../components/JuiceTableRow"
+import { useDeleteJuice } from "../hooks/useDeletejuice"
 import { useJuice } from "../hooks/useJuice"
 import { type JuiceData } from "../types"
+import { useState } from "react"
+import AddJuiceModal from "../components/AddJuiceModal"
 
 function AdminProducts() {
   const { data, isLoading, isError } = useJuice()
+  const [isOpen, setIsOpen] = useState(false)
+  const handleDelete = useDeleteJuice()
+  const queryClient = useQueryClient()
+
+  const onClose = () =>{
+    setIsOpen(false)
+  }
+  const onDelete = (id: string) =>{
+    handleDelete.mutate(id,{
+      onSuccess: () => {
+        queryClient.invalidateQueries({queryKey:['juices']})
+      }
+    })
+  }
 
   if (isLoading) return <p className="text-gray-500">Loading...</p>
   if (isError) return <p className="text-red-500">Failed to load products.</p>
   if (!data) return null
 
   return (
+    <>
+  
+    {isOpen && <AddJuiceModal onClose={onClose}/>}
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Products</h1>
-        <button className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+        <button className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+        onClick={()=>setIsOpen(true)}>
           + Add Product
         </button>
       </div>
@@ -25,44 +48,19 @@ function AdminProducts() {
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Price</th>
               <th className="px-4 py-3">Description</th>
+              <th className="px-4 py-3">Stock</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
-            {data.map((product: JuiceData) => (
-              <tr key={product.ID} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <td className="px-4 py-3">
-                  <img
-                    src={product.ImageUrl}
-                    alt={product.Name}
-                    className="h-12 w-12 rounded-lg object-cover"
-                  />
-                </td>
-                <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                  {product.Name}
-                </td>
-                <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                  ${(product.Price / 100).toFixed(2)}
-                </td>
-                <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                  {product.Description}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <button className="rounded px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-                      Edit
-                    </button>
-                    <button className="rounded px-3 py-1 text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40">
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
+            {data.map((juice: JuiceData) => (
+              <JuiceTableRow key={juice.ID} juice={juice} onDelete={onDelete} />
             ))}
           </tbody>
         </table>
       </div>
     </div>
+      </>
   )
 }
 

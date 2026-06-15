@@ -37,11 +37,17 @@ export type MeRes = {
 export type JuiceData = {
     ID: string,
     ImageUrl: string,
-    created_at: string,
     Name: string,
     Description: string,
     Price: number
     Stock: number
+}
+
+export type JuiceUpdateParams = {
+  name: string,
+  description: string,
+  price: number,
+  stock: number
 }
 
 export type OrderItem = {
@@ -54,4 +60,12 @@ export type Order = {
   total: number
   created_at: string
   items: OrderItem[]
+}
+
+export type AdminOrder = {
+  ID: string
+  Total: number
+  CreatedAt: string
+  UserID: string
+  Username: string
 }

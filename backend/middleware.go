@@ -23,18 +23,21 @@ func getTokenFromCookie(r *http.Request, secret string) (userID uuid.UUID, role 
 func (cfg *config) middlewareCheckAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		userID, tokenRole, _, err := getTokenFromCookie(r, cfg.secret)
+		token, err := auth.GetBearerToken(r.Header)
 		if err != nil {
 			respondWithError(w, 401, "Unauthorized")
 			return
 		}
-
+		userID, tokenRole, err := auth.ValidateJWT(token, cfg.secret)
+		if err != nil {
+			respondWithError(w, 401, "Unauthorized")
+			return
+		}
 		role, err := cfg.queries.GetUserRole(r.Context(), userID)
 		if err != nil {
 			respondWithError(w, 500, "Error getting user role")
 			return
 		}
-
 		if role != tokenRole {
 			respondWithError(w, 403, "mismatched token")
 			return

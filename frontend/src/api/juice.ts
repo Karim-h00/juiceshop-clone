@@ -1,6 +1,6 @@
 import { useAuthStore } from '../store/authStore'
 import { BASE_URL } from './config'
-import { type JuiceData } from '../types'
+import { type JuiceData, type JuiceUpdateParams } from '../types'
 
 export const getJuices = async () => {
     const response = await fetch(`${BASE_URL}/api`)
@@ -36,8 +36,9 @@ export const deleteJuice = async (juiceID: string) => {
     return response.json()
 }
 
-export const addJuice = async(juiceData: JuiceData)=>{
+export const addJuice = async(juiceData: JuiceUpdateParams)=>{
     const token = useAuthStore.getState().token
+    console.log(JSON.stringify(juiceData))
 
     const response = await fetch(`${BASE_URL}/api/admin/juice`, {
         method: "POST",
@@ -46,10 +47,10 @@ export const addJuice = async(juiceData: JuiceData)=>{
             "Authorization": `Bearer ${token}`
         },
         body : JSON.stringify({
-            name: juiceData.Name,
-            description: juiceData.Description,
-            price: juiceData.Price,
-            stock: juiceData.Stock
+            name: juiceData.name,
+            description: juiceData.description,
+            price: juiceData.price,
+            stock: juiceData.stock
         })
     })
     if(!response.ok){
@@ -57,20 +58,21 @@ export const addJuice = async(juiceData: JuiceData)=>{
     }
 }
 
-export const updateJuice = async(juiceData: JuiceData) => {
+export const updateJuice = async(id: string ,juiceData: JuiceUpdateParams) => {
     const token = useAuthStore.getState().token
+    console.log(JSON.stringify(juiceData))
 
-    const response = await fetch(`${BASE_URL}/api/admin/juice/${juiceData.ID}`, {
+    const response = await fetch(`${BASE_URL}/api/admin/juice/${id}`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
         },
         body : JSON.stringify({
-            name: juiceData.Name,
-            description: juiceData.Description,
-            price: juiceData.Price,
-            stock: juiceData.Stock
+            name: juiceData.name,
+            description: juiceData.description,
+            price: juiceData.price,
+            stock: juiceData.stock
         })
     })
     if(!response.ok){

@@ -7,6 +7,7 @@ import OrderHistory from "../pages/OrderHistory";
 import AdminLayout from "../pages/AdminLayout";
 import AdminProducts from "../pages/AdminProducts";
 import Signup from "../pages/Signup";
+import AdminOrders from "../pages/AdminOrders";
 
 export const routes = [
     {
@@ -32,6 +33,8 @@ export const routes = [
         element: <AdminLayout />,
         children: [
             {index: true, element:<AdminProducts />},
+            {path: 'products', element:<AdminProducts />},
+            {path: 'orders', element:<AdminOrders />}
         ]
     }
 ]

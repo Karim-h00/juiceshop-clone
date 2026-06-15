@@ -64,8 +64,9 @@ export const getAdminOrders = async (page?: number) => {
     const url = new URL(`${BASE_URL}/api/admin/orders`)
     if (page) url.searchParams.set("page", page.toString())
     
-    const response = await fetch(url.toString(), {
+    const response = await fetch(url, {
         headers: {
+            "Content-Type": 'application/json',
             "Authorization": `Bearer ${token}`
         }
     })
