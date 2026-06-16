@@ -187,6 +187,7 @@ func (cfg *config) handlerGetUserOrderHistory(w http.ResponseWriter, r *http.Req
 func (cfg *config) handlerGetOrderByID(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(contextKeyUserID).(uuid.UUID)
+	role := r.Context().Value(contextKeyRole).(string)
 	orderID := r.PathValue("orderID")
 	parsedID, err := uuid.Parse(orderID)
 	if err != nil {
@@ -199,7 +200,7 @@ func (cfg *config) handlerGetOrderByID(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 404, "order not found")
 		return
 	}
-	if order.UserID != userID {
+	if role != "admin" && order.UserID != userID {
 		respondWithError(w, 403, "forbidden")
 		return
 	}

@@ -55,7 +55,7 @@ export type OrderItem = {
   quantity: number
 }
 
-export type Order = {
+export type OrderDetail = {
   order_id: string
   total: number
   created_at: string

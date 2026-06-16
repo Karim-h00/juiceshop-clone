@@ -1,6 +1,7 @@
 import { BASE_URL } from './config'
 import { useAuthStore } from '../store/authStore'
 import { useCartStore } from '../store/cartStore'
+import type { OrderDetail } from '../types'
 
 export const checkout = async () => {
 
@@ -43,7 +44,7 @@ export const getOrderHistory = async () => {
     return response.json()
 }
 
-export const getOrderByID = async (orderID: string) => {
+export const getOrderByID = async (orderID: string): Promise<OrderDetail> => {
     const token = useAuthStore.getState().token
 
     const response = await fetch(`${BASE_URL}/api/order/${orderID}`, {
@@ -59,7 +60,7 @@ export const getOrderByID = async (orderID: string) => {
     return response.json()
 }
 
-export const getAdminOrders = async (page?: number) => {
+export const getAdminOrders = async (page?: number) =>  {
     const token = useAuthStore.getState().token
     const url = new URL(`${BASE_URL}/api/admin/orders`)
     if (page) url.searchParams.set("page", page.toString())

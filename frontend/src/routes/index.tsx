@@ -8,6 +8,7 @@ import AdminLayout from "../pages/AdminLayout";
 import AdminProducts from "../pages/AdminProducts";
 import Signup from "../pages/Signup";
 import AdminOrders from "../pages/AdminOrders";
+import OrderDetails from "../components/OrderDetails";
 
 export const routes = [
     {
@@ -34,7 +35,8 @@ export const routes = [
         children: [
             {index: true, element:<AdminProducts />},
             {path: 'products', element:<AdminProducts />},
-            {path: 'orders', element:<AdminOrders />}
+            {path: 'orders', element:<AdminOrders />},
+            {path: 'orders/:id', element:<OrderDetails />}
         ]
     }
 ]

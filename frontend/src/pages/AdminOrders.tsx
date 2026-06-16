@@ -1,10 +1,13 @@
 import { useState } from "react"
 import { useGetAdminOrders } from "../hooks/useGetAdminOrders"
 import type { AdminOrder } from "../types"
+import { useNavigate } from "react-router-dom"
 
 function AdminOrders() {
   const [page, setPage] = useState(1)
   const { data, isLoading, isError } = useGetAdminOrders(page)
+
+  const navigate = useNavigate();
 
   if (isLoading) return <p className="text-gray-500">Loading...</p>
   if (isError) return <p className="text-red-500">Failed to load orders.</p>
@@ -26,7 +29,8 @@ function AdminOrders() {
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
             {data.map((order: AdminOrder) => (
-              <tr key={order.ID} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <tr key={order.ID} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={()=>navigate(`/admin/orders/${order.ID}`)}>
                 <td className="px-4 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{order.ID.slice(0, 8)}...</td>
                 <td className="px-4 py-3 text-gray-900 dark:text-white">{order.Username}</td>
                 <td className="px-4 py-3 text-gray-700 dark:text-gray-300">${(order.Total / 100).toFixed(2)}</td>
