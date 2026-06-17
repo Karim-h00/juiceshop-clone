@@ -41,3 +41,16 @@ WHERE id = $2;
 -- name: GetUserByID :one
 SELECT * from users
 WHERE id = $1;
+
+-- name: GetAllUsers :many
+SELECT * from users;
+
+-- name: UpdateUserRole :exec
+UPDATE users
+SET
+    role = $1,
+    updated_at = now()
+WHERE id = $2;
+
+-- name: DeleteUserByID :exec
+DELETE FROM users WHERE id = $1;

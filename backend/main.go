@@ -80,7 +80,6 @@ func main() {
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)
 	ServeMux.Handle("PUT /api/users", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerUpdateUser)))
 	ServeMux.Handle("POST /api/user/password", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerUpdatePassword)))
-
 	ServeMux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)
 	ServeMux.HandleFunc("POST /api/logout", cfg.handlerLogout)
 	ServeMux.Handle("GET /api/me", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerMe)))
@@ -88,22 +87,27 @@ func main() {
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
 	ServeMux.HandleFunc("GET /api/juice/{juiceName}", cfg.handlerGetJuiceByName)
 
+	ServeMux.Handle("POST /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerOrderJuice)))
+	ServeMux.Handle("GET /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetUserOrderHistory)))
+	ServeMux.Handle("GET /api/order/{orderID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetOrderByID)))
+
+	ServeMux.HandleFunc("GET /api/juice/{juiceID}/reviews", cfg.handlerGetReviews)
+	ServeMux.Handle("POST /api/juice/{juiceID}/review", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerAddReview)))
+	ServeMux.Handle("DELETE /api/juice/{juiceID}/review/{reviewID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerDeleteReview)))
+
 	ServeMux.Handle("GET /api/admin/test", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminTest)))
 	ServeMux.Handle("POST /api/admin/juice", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAddJuice)))
 	ServeMux.Handle("PUT /api/admin/juice/{juiceID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerUpdateJuice)))
 	ServeMux.Handle("PUT /api/admin/juice/{juiceID}/image", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerUpdateJuiceImage)))
 	ServeMux.Handle("DELETE /api/admin/juice/{juiceID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerDeleteJuice)))
 
-	ServeMux.Handle("POST /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerOrderJuice)))
-	ServeMux.Handle("GET /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetUserOrderHistory)))
-	ServeMux.Handle("GET /api/order/{orderID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetOrderByID)))
+	ServeMux.Handle("GET /api/admin/users", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerGetAllUsers)))
+	ServeMux.Handle("PATCH /api/admin/users/{userID}/role", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerAdminUpdate)))
+	ServeMux.Handle("DELETE /api/admin/users/{userID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerDeleteUser)))
+
 	ServeMux.Handle("DELETE /api/admin/order/{orderID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerDeleteOrder)))
 	ServeMux.Handle("GET /api/admin/order/{userID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminGetUserOrders)))
 	ServeMux.Handle("GET /api/admin/orders", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminGetAllOrders)))
-
-	ServeMux.HandleFunc("GET /api/juice/{juiceID}/reviews", cfg.handlerGetReviews)
-	ServeMux.Handle("POST /api/juice/{juiceID}/review", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerAddReview)))
-	ServeMux.Handle("DELETE /api/juice/{juiceID}/review/{reviewID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerDeleteReview)))
 
 	handler := middlewareCORS(ServeMux)
 

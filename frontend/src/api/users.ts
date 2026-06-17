@@ -1,0 +1,49 @@
+import { useAuthStore } from "../store/authStore"
+import type { userData } from "../types"
+import { BASE_URL } from "./config"
+
+export const getAllUsers = async (): Promise<userData[]> => {
+    const token = useAuthStore.getState().token
+    const response = await fetch(`${BASE_URL}/api/admin/users`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        }
+    })
+    if (!response.ok) {
+        throw new Error('Failed to get users')
+    }
+    const data = response.json()
+    console.log(data)
+    return data
+}
+
+export const adminUpdateUser = async (id: string, role: "admin" | "user") => {
+    const token = useAuthStore.getState().token
+    const response = await fetch(`${BASE_URL}/api/admin/users/${id}/role`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ role })
+    })
+    if (!response.ok) {
+        throw new Error('Failed to update user')
+    }
+}
+
+export const deleteUser = async (id: string) => {
+    const token = useAuthStore.getState().token
+    const response = await fetch(`${BASE_URL}/api/admin/users/${id}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        }
+    })
+    if (!response.ok) {
+        throw new Error('Failed to delete user')
+    }
+}

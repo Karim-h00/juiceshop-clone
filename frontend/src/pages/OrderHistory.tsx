@@ -1,5 +1,5 @@
 import { useGetOrderHistory } from "../hooks/useGetOrderHistory"
-import { type Order } from "../types"
+import { type OrderDetail } from "../types"
 
 function OrderHistory() {
 
@@ -18,7 +18,7 @@ function OrderHistory() {
             )}
 
             <div className="space-y-4">
-                {data.map((order: Order) => (
+                {data.map((order: OrderDetail) => (
                     <div
                         key={order.order_id}
                         className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
