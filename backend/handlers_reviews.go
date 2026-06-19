@@ -4,25 +4,61 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/karim-h00/juiceshop-clone/internal/database"
 )
 
 func (cfg *config) handlerGetReviews(w http.ResponseWriter, r *http.Request) {
-	juiceID := r.PathValue("juiceID")
-	parsedJuiceID, err := uuid.Parse(juiceID)
-	if err != nil {
-		respondWithError(w, 400, "invalid juice ID")
-		return
-	}
 
-	reviewData, err := cfg.queries.GetJuiceReviews(r.Context(), parsedJuiceID)
+	type reviewResponse struct {
+		ID        uuid.UUID `json:"id"`
+		UserID    uuid.UUID `json:"user_id"`
+		JuiceID   uuid.UUID `json:"juice_id"`
+		Rating    int32     `json:"rating"`
+		Comment   *string   `json:"comment"`
+		CreatedAt time.Time `json:"created_at"`
+		Username  string    `json:"username"`
+	}
+	slug := r.PathValue("slug")
+	name := slugToName(slug)
+
+	juiceID, err := cfg.queries.GetJuiceID(r.Context(), name)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "no available data")
+		if err == sql.ErrNoRows {
+			respondWithJSON(w, http.StatusOK, []interface{}{})
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
-	respondWithJSON(w, http.StatusOK, reviewData)
+	reviewData, err := cfg.queries.GetJuiceReviews(r.Context(), juiceID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			respondWithJSON(w, http.StatusOK, []interface{}{})
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")
+		return
+	}
+	responses := make([]reviewResponse, len(reviewData))
+	for i, r := range reviewData {
+		var comment *string
+		if r.Comment.Valid {
+			comment = &r.Comment.String
+		}
+		responses[i] = reviewResponse{
+			ID:        r.ID,
+			UserID:    r.UserID,
+			JuiceID:   r.JuiceID,
+			Rating:    r.Rating,
+			Comment:   comment,
+			CreatedAt: r.CreatedAt,
+			Username:  r.Username,
+		}
+	}
+	respondWithJSON(w, http.StatusOK, responses)
 }
 
 func (cfg *config) handlerAddReview(w http.ResponseWriter, r *http.Request) {
@@ -32,13 +68,18 @@ func (cfg *config) handlerAddReview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Context().Value(contextKeyUserID).(uuid.UUID)
-	juiceID := r.PathValue("juiceID")
-	parsedJuiceID, err := uuid.Parse(juiceID)
+	slug := r.PathValue("slug")
+	name := slugToName(slug)
+
+	juiceID, err := cfg.queries.GetJuiceID(r.Context(), name)
 	if err != nil {
-		respondWithError(w, 400, "invalid juice ID")
+		if err == sql.ErrNoRows {
+			respondWithJSON(w, http.StatusOK, []interface{}{})
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
-
 	decoder := json.NewDecoder(r.Body)
 	params := reviewParams{}
 	err = decoder.Decode(&params)
@@ -54,7 +95,7 @@ func (cfg *config) handlerAddReview(w http.ResponseWriter, r *http.Request) {
 
 	review, err := cfg.queries.AddReview(r.Context(), database.AddReviewParams{
 		UserID:  userID,
-		JuiceID: parsedJuiceID,
+		JuiceID: juiceID,
 		Rating:  int32(params.Rating),
 		Comment: sql.NullString{String: params.Comment, Valid: params.Comment != ""},
 	})

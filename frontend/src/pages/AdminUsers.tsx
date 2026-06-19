@@ -26,6 +26,7 @@ function AdminUsers() {
                             <th className="px-4 py-3">Email</th>
                             <th className="px-4 py-3">Role</th>
                             <th className="px-4 py-3">Created At</th>
+                            <th className="px-4 py-3">Updated At</th>
                             <th className="px-4 py-3">Actions</th>
                         </tr>
                     </thead>
@@ -41,14 +42,17 @@ function AdminUsers() {
                                     <td className="px-4 py-3">{user.email}</td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${isAdmin
-                                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
-                                                : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
+                                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
                                             }`}>
                                             {user.role}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-gray-400 dark:text-gray-500">
                                         {new Date(user.created_at).toLocaleDateString()}
+                                    </td>
+                                    <td className="px-4 py-3 text-gray-400 dark:text-gray-500">
+                                        {new Date(user.updated_at).toLocaleDateString()}
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex gap-2">

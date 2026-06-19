@@ -196,6 +196,18 @@ func (q *Queries) GetJuiceDetails(ctx context.Context, name string) (Juice, erro
 	return i, err
 }
 
+const getJuiceID = `-- name: GetJuiceID :one
+SELECT id from juice
+WHERE name = $1
+`
+
+func (q *Queries) GetJuiceID(ctx context.Context, name string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getJuiceID, name)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getJuicesByIDs = `-- name: GetJuicesByIDs :many
 SELECT name, id, price, stock FROM juice WHERE id = ANY($1::uuid[])
 `

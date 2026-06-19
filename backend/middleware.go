@@ -4,21 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/karim-h00/juiceshop-clone/internal/auth"
 )
-
-func getTokenFromCookie(r *http.Request, secret string) (userID uuid.UUID, role string, token string, err error) {
-	cookie, err := r.Cookie("access_token")
-	if err != nil {
-		return uuid.UUID{}, "", "", err
-	}
-	userID, role, err = auth.ValidateJWT(cookie.Value, secret)
-	if err != nil {
-		return uuid.UUID{}, "", "", err
-	}
-	return userID, role, cookie.Value, nil
-}
 
 func (cfg *config) middlewareCheckAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

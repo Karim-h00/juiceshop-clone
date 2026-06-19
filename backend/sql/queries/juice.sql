@@ -6,6 +6,10 @@ ORDER BY created_at ASC;
 SELECT * FROM juice
 WHERE id = $1;
 
+-- name: GetJuiceID :one
+SELECT id from juice
+WHERE name = $1;
+
 -- name: GetJuiceDetails :one
 SELECT * FROM juice
 WHERE name = $1;

@@ -1,19 +1,21 @@
 import { useParams } from "react-router-dom"
 import { useGetJuiceByName } from "../hooks/useGetJuiceByName"
 import { useCartStore } from "../store/cartStore"
+import { ReviewList } from "../components/ReviewList"
+import ReviewForm from "../components/ReviewForm"
 
 function JuiceDetails() {
   const { juiceName } = useParams<{ juiceName: string }>()
   const decoded = juiceName!
-  .split('-')
-  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-  .join(' ')
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
   const { data, isLoading, isError } = useGetJuiceByName(decoded)
   const { addItem } = useCartStore()
 
   if (isLoading) return <div>Loading...</div>
   if (isError) return <div>Something went wrong</div>
-  if(!data) return null
+  if (!data) return null
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-4xl">
@@ -43,6 +45,11 @@ function JuiceDetails() {
             Add to cart
           </button>
         </div>
+      </div>
+
+      <div className="mt-10">
+        <ReviewList slug={juiceName!} />
+        <ReviewForm slug={juiceName!} />
       </div>
     </div>
   )
