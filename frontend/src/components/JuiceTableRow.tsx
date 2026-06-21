@@ -13,13 +13,13 @@ type JuiceRowProps = {
 function JuiceTableRow({ juice, onDelete }: JuiceRowProps) {
 
     const [isEditing, setisEditing] = useState(false)
-    const [displayPrice, setDisplayPrice] = useState((juice.Price / 100).toFixed(2))
+    const [displayPrice, setDisplayPrice] = useState((juice.price / 100).toFixed(2))
     const [pendingFile, setPendingFile] = useState<File | null>(null)
     const [editForm, setEditForm] = useState<JuiceUpdateParams>({
-        name: juice.Name,
-        description: juice.Description,
-        price: juice.Price,
-        stock: juice.Stock,
+        name: juice.name,
+        description: juice.description,
+        price: juice.price,
+        stock: juice.stock,
     })
 
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -27,7 +27,7 @@ function JuiceTableRow({ juice, onDelete }: JuiceRowProps) {
     const uploadImage = useUploadJuiceImage()
     const queryClient = useQueryClient()
     const handleSave = () => {
-        updateJuice.mutate({ id: juice.ID, juiceData: editForm }, {
+        updateJuice.mutate({ id: juice.id, juiceData: editForm }, {
             onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: ['juices'] })
                 setisEditing(false)
@@ -48,7 +48,7 @@ function JuiceTableRow({ juice, onDelete }: JuiceRowProps) {
 
     const handleConfirm = () => {
         if (!pendingFile) return
-        uploadImage.mutate({ id: juice.ID, file: pendingFile }, {
+        uploadImage.mutate({ id: juice.id, file: pendingFile }, {
             onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: ['juices'] })
                 setPendingFile(null)
@@ -60,7 +60,7 @@ function JuiceTableRow({ juice, onDelete }: JuiceRowProps) {
         <>
             {pendingFile && (
                 <ConfirmImageModal
-                    currentImageUrl={juice.ImageUrl}
+                    currentImageUrl={juice.image_url}
                     newFile={pendingFile}
                     onConfirm={handleConfirm}
                     onCancel={() => setPendingFile(null)}
@@ -74,8 +74,8 @@ function JuiceTableRow({ juice, onDelete }: JuiceRowProps) {
                         onClick={() => fileInputRef.current?.click()}
                     >
                         <img
-                            src={juice.ImageUrl}
-                            alt={juice.Name}
+                            src={juice.image_url}
+                            alt={juice.name}
                             className="h-12 w-12 rounded-lg object-cover"
                         />
 
@@ -113,7 +113,7 @@ function JuiceTableRow({ juice, onDelete }: JuiceRowProps) {
                             className="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-sm"
                             value={editForm.name}
                             onChange={(e) => onChange('name', e.target.value)} />
-                        : juice.Name}
+                        : juice.name}
                 </td>
                 <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                     {isEditing ? (
@@ -129,21 +129,21 @@ function JuiceTableRow({ juice, onDelete }: JuiceRowProps) {
                                 }
                             }}
                         />
-                    ) : (juice.Price / 100).toFixed(2)}
+                    ) : (juice.price / 100).toFixed(2)}
                 </td>
                 <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-xs truncate">
                     {isEditing ? <input
                         className="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-sm"
                         value={editForm.description}
                         onChange={(e) => onChange('description', e.target.value)} />
-                        : juice.Description}
+                        : juice.description}
                 </td>
                 <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-xs truncate">
                     {isEditing ? <input
                         className="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-sm"
                         value={editForm.stock}
                         onChange={(e) => onChange('stock', e.target.value == '' ? 0 : parseInt(e.target.value))} />
-                        : juice.Stock}
+                        : juice.stock}
                 </td>
                 <td className="px-4 py-3">
                     <div className="flex gap-2">
@@ -153,10 +153,10 @@ function JuiceTableRow({ juice, onDelete }: JuiceRowProps) {
                                     <button className="rounded px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                                         onClick={() => {
                                             setEditForm({
-                                                name: juice.Name,
-                                                description: juice.Description,
-                                                price: juice.Price,
-                                                stock: juice.Stock,
+                                                name: juice.name,
+                                                description: juice.description,
+                                                price: juice.price,
+                                                stock: juice.stock,
                                             })
                                             setisEditing(false)
                                         }}>
@@ -177,7 +177,7 @@ function JuiceTableRow({ juice, onDelete }: JuiceRowProps) {
                                     </button>
                                     <button className="rounded px-3 py-1 text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
                                         onClick={() => {
-                                            onDelete(juice.ID)
+                                            onDelete(juice.id)
                                         }}>
                                         Delete
                                     </button>

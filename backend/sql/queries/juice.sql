@@ -1,6 +1,11 @@
 -- name: GetAllJuice :many
-SELECT * FROM juice 
-ORDER BY created_at ASC;
+SELECT juice.*,
+COALESCE(AVG(reviews.rating), 0) AS avg_rating,
+COUNT(reviews.id) AS reviews_count
+FROM juice
+LEFT JOIN reviews ON reviews.juice_id = juice.id
+GROUP BY juice.id
+ORDER BY juice.name ASC;
 
 -- name: GetJuiceByID :one
 SELECT * FROM juice
@@ -11,8 +16,13 @@ SELECT id from juice
 WHERE name = $1;
 
 -- name: GetJuiceDetails :one
-SELECT * FROM juice
-WHERE name = $1;
+SELECT juice.*,
+COALESCE(AVG(reviews.rating), 0) AS avg_rating,
+COUNT(reviews.id) AS reviews_count
+FROM juice
+LEFT JOIN reviews ON reviews.juice_id = juice.id
+WHERE name = $1
+GROUP BY juice.id;
 
 -- name: GetJuicesByIDs :many
 SELECT name, id, price, stock FROM juice WHERE id = ANY(@ids::uuid[]);

@@ -2,7 +2,7 @@ import { useAuthStore } from '../store/authStore'
 import { BASE_URL } from './config'
 import { type JuiceData, type JuiceUpdateParams } from '../types'
 
-export const getJuices = async () => {
+export const getJuices = async (): Promise<JuiceData[]> => {
     const response = await fetch(`${BASE_URL}/api`)
     if (!response.ok) {
         throw new Error('Failed to fetch juices')

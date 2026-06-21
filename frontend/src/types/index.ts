@@ -35,12 +35,14 @@ export type MeRes = {
 }
 
 export type JuiceData = {
-    ID: string,
-    ImageUrl: string,
-    Name: string,
-    Description: string,
-    Price: number
-    Stock: number
+    id: string
+    name: string
+    description: string
+    price: number
+    stock: number
+    image_url: string
+    avg_rating: number
+    reviews_count: number
 }
 
 export type JuiceUpdateParams = {

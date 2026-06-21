@@ -14,6 +14,9 @@ function Home() {
     if (isError) {
         return <div>Something went wrong</div>
     }
+    if (!data){
+        return <div>No items</div>
+    }
 
     return (
         <>
@@ -22,7 +25,7 @@ function Home() {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {data.map((item: JuiceData) => (
                         <Card
-                            key={item.ID}
+                            key={item.id}
                             item={item}
                             addItem={addItem} />
                     ))}

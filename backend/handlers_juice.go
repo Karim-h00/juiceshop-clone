@@ -6,28 +6,55 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/karim-h00/juiceshop-clone/internal/database"
 )
 
+type JuiceResponse struct {
+	ID           uuid.UUID `json:"id"`
+	Name         string    `json:"name"`
+	Description  string    `json:"description"`
+	Price        int32     `json:"price"`
+	ImageUrl     string    `json:"image_url"`
+	Stock        int32     `json:"stock"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	AvgRating    float64   `json:"avg_rating"`
+	ReviewsCount int64     `json:"reviews_count"`
+}
+
 func (cfg *config) handlerGetJuice(w http.ResponseWriter, r *http.Request) {
 
-	q := r.URL.Query().Get("q")
-	var data = []database.Juice{}
-	var err error
+	rows, err := cfg.queries.GetAllJuice(r.Context())
+	if err != nil {
+		respondWithError(w, 500, "error retrieving juicess")
+		return
+	}
 
-	if q != "" {
-		data, err = cfg.queries.GetJuiceByName(r.Context(), "%"+q+"%")
-		if err != nil {
-			respondWithError(w, 500, "Error retrieving Juices")
-			return
+	data := make([]JuiceResponse, len(rows))
+	for i, row := range rows {
+		avgRating := 0.0
+		if b, ok := row.AvgRating.([]byte); ok {
+			parsed, err := strconv.ParseFloat(string(b), 64)
+			if err == nil {
+				avgRating = parsed
+			}
 		}
-	} else {
-		data, err = cfg.queries.GetAllJuice(r.Context())
-		if err != nil {
-			respondWithError(w, 500, "Error retrieving Juices")
-			return
+
+		data[i] = JuiceResponse{
+			ID:           row.ID,
+			Name:         row.Name,
+			Description:  row.Description,
+			Price:        row.Price,
+			ImageUrl:     row.ImageUrl,
+			Stock:        row.Stock,
+			CreatedAt:    row.CreatedAt,
+			UpdatedAt:    row.UpdatedAt,
+			AvgRating:    avgRating,
+			ReviewsCount: row.ReviewsCount,
 		}
 	}
 	respondWithJSON(w, 200, data)
@@ -37,12 +64,32 @@ func (cfg *config) handlerGetJuice(w http.ResponseWriter, r *http.Request) {
 func (cfg *config) handlerGetJuiceByName(w http.ResponseWriter, r *http.Request) {
 	juiceName := r.PathValue("juiceName")
 
-	data, err := cfg.queries.GetJuiceDetails(r.Context(), juiceName)
+	row, err := cfg.queries.GetJuiceDetails(r.Context(), juiceName)
 	if err != nil {
 		respondWithError(w, 500, "Error retrieving Juice")
 		return
 	}
-	respondWithJSON(w, 200, data)
+
+	avgRating := 0.0
+	if b, ok := row.AvgRating.([]byte); ok {
+		parsed, err := strconv.ParseFloat(string(b), 64)
+		if err == nil {
+			avgRating = parsed
+		}
+	}
+
+	respondWithJSON(w, 200, JuiceResponse{
+		ID:           row.ID,
+		Name:         row.Name,
+		Description:  row.Description,
+		Price:        row.Price,
+		ImageUrl:     row.ImageUrl,
+		Stock:        row.Stock,
+		CreatedAt:    row.CreatedAt,
+		UpdatedAt:    row.UpdatedAt,
+		AvgRating:    avgRating,
+		ReviewsCount: row.ReviewsCount,
+	})
 }
 
 func (cfg *config) handlerDeleteJuice(w http.ResponseWriter, r *http.Request) {

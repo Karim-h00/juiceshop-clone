@@ -13,7 +13,8 @@ export const addReview = async (slug: string, rating: number, comment?: string) 
             body: JSON.stringify({rating, comment})
         })
         if (!response.ok) {
-            throw new Error('Failed to add review')
+            const err = await response.json()
+            throw new Error(err.error || "failed to add review")
         }
         return response.json()
 }

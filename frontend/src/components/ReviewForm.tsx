@@ -9,7 +9,7 @@ function ReviewForm({slug}: {slug: string}) {
   const navigate = useNavigate()
   const [hovered, setHovered] = useState(0)
   const [form, setForm] = useState({ rating: 0, comment: "" })
-  const { mutate, isPending, isError } = useAddReview(slug)
+  const { mutate, isPending, isError, error } = useAddReview(slug)
 
   const handleSubmit = () => {
     if (!token) { navigate("/login"); return }
@@ -47,7 +47,7 @@ function ReviewForm({slug}: {slug: string}) {
         className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent px-3 py-2 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
       />
 
-      {isError && <p className="text-sm text-red-500 mt-1">Failed to submit review. Try again.</p>}
+      {isError && <p className="text-sm text-red-500 mt-1">{error.message}</p>}
 
       <button
         onClick={handleSubmit}

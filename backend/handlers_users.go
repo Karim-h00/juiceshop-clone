@@ -33,6 +33,7 @@ func (cfg *config) handlerGetAllUsers(w http.ResponseWriter, r *http.Request) {
 			Email:     u.Email,
 			Role:      u.Role,
 			CreatedAt: u.CreatedAt,
+			UpdatedAt: u.UpdatedAt,
 		}
 	}
 	respondWithJSON(w, 200, users)

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -100,7 +101,11 @@ func (cfg *config) handlerAddReview(w http.ResponseWriter, r *http.Request) {
 		Comment: sql.NullString{String: params.Comment, Valid: params.Comment != ""},
 	})
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "could not add review")
+		if strings.Contains(err.Error(), "unique_user_juice_review") {
+			respondWithError(w, 409, "You have already reviewed this juice")
+			return
+		}
+		respondWithError(w, 500, "Error creating review")
 		return
 	}
 	respondWithJSON(w, 201, review)

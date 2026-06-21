@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -81,19 +82,37 @@ func (q *Queries) DeleteJuice(ctx context.Context, id uuid.UUID) error {
 }
 
 const getAllJuice = `-- name: GetAllJuice :many
-SELECT id, name, description, price, created_at, updated_at, image_url, stock FROM juice 
-ORDER BY created_at ASC
+SELECT juice.id, juice.name, juice.description, juice.price, juice.created_at, juice.updated_at, juice.image_url, juice.stock,
+COALESCE(AVG(reviews.rating), 0) AS avg_rating,
+COUNT(reviews.id) AS reviews_count
+FROM juice
+LEFT JOIN reviews ON reviews.juice_id = juice.id
+GROUP BY juice.id
+ORDER BY juice.name ASC
 `
 
-func (q *Queries) GetAllJuice(ctx context.Context) ([]Juice, error) {
+type GetAllJuiceRow struct {
+	ID           uuid.UUID
+	Name         string
+	Description  string
+	Price        int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	ImageUrl     string
+	Stock        int32
+	AvgRating    interface{}
+	ReviewsCount int64
+}
+
+func (q *Queries) GetAllJuice(ctx context.Context) ([]GetAllJuiceRow, error) {
 	rows, err := q.db.QueryContext(ctx, getAllJuice)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Juice
+	var items []GetAllJuiceRow
 	for rows.Next() {
-		var i Juice
+		var i GetAllJuiceRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -103,6 +122,8 @@ func (q *Queries) GetAllJuice(ctx context.Context) ([]Juice, error) {
 			&i.UpdatedAt,
 			&i.ImageUrl,
 			&i.Stock,
+			&i.AvgRating,
+			&i.ReviewsCount,
 		); err != nil {
 			return nil, err
 		}
@@ -176,13 +197,31 @@ func (q *Queries) GetJuiceByName(ctx context.Context, name string) ([]Juice, err
 }
 
 const getJuiceDetails = `-- name: GetJuiceDetails :one
-SELECT id, name, description, price, created_at, updated_at, image_url, stock FROM juice
+SELECT juice.id, juice.name, juice.description, juice.price, juice.created_at, juice.updated_at, juice.image_url, juice.stock,
+COALESCE(AVG(reviews.rating), 0) AS avg_rating,
+COUNT(reviews.id) AS reviews_count
+FROM juice
+LEFT JOIN reviews ON reviews.juice_id = juice.id
 WHERE name = $1
+GROUP BY juice.id
 `
 
-func (q *Queries) GetJuiceDetails(ctx context.Context, name string) (Juice, error) {
+type GetJuiceDetailsRow struct {
+	ID           uuid.UUID
+	Name         string
+	Description  string
+	Price        int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	ImageUrl     string
+	Stock        int32
+	AvgRating    interface{}
+	ReviewsCount int64
+}
+
+func (q *Queries) GetJuiceDetails(ctx context.Context, name string) (GetJuiceDetailsRow, error) {
 	row := q.db.QueryRowContext(ctx, getJuiceDetails, name)
-	var i Juice
+	var i GetJuiceDetailsRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -192,6 +231,8 @@ func (q *Queries) GetJuiceDetails(ctx context.Context, name string) (Juice, erro
 		&i.UpdatedAt,
 		&i.ImageUrl,
 		&i.Stock,
+		&i.AvgRating,
+		&i.ReviewsCount,
 	)
 	return i, err
 }

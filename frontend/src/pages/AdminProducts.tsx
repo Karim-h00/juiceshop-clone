@@ -53,7 +53,7 @@ function AdminProducts() {
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
             {data.map((juice: JuiceData) => (
-              <JuiceTableRow key={juice.ID} juice={juice} onDelete={onDelete} />
+              <JuiceTableRow key={juice.id} juice={juice} onDelete={onDelete} />
             ))}
           </tbody>
         </table>
