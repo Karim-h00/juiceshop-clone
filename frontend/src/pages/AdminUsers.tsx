@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react"
 
 function AdminUsers() {
     const [search, setSearch] = useState("")
+    const [page, setPage] = useState(1)
     const [debouncedSearch, setDebouncedSearch] = useState("")
     const inputRef = useRef<HTMLInputElement>(null)
 
@@ -18,7 +19,7 @@ function AdminUsers() {
     }, [search])
 
 
-    const { data, isLoading, isError } = useGetAllUsers({ search: debouncedSearch })
+    const { data, isLoading, isError } = useGetAllUsers({ search: debouncedSearch, page })
 
     const roleMutation = useAdminUpdateUser()
     const deleteMutation = useDeleteUser()
@@ -109,6 +110,23 @@ function AdminUsers() {
                     </div>
                 )
             }
+            <div className="flex justify-between items-center">
+        <button
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={page === 1}
+          className="rounded px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-gray-300"
+        >
+          Previous
+        </button>
+        <span className="text-sm text-gray-500 dark:text-gray-400">Page {page}</span>
+        <button
+          onClick={() => setPage(p => p + 1)}
+          disabled={data.length < 10}
+          className="rounded px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-gray-300"
+        >
+          Next
+        </button>
+      </div>
         </div>
     )
 }
