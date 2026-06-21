@@ -11,6 +11,16 @@ import (
 	"github.com/google/uuid"
 )
 
+type AuditLog struct {
+	ID         uuid.UUID
+	UserID     uuid.NullUUID
+	Action     string
+	TargetType string
+	TargetID   uuid.NullUUID
+	TargetName sql.NullString
+	CreatedAt  time.Time
+}
+
 type Juice struct {
 	ID          uuid.UUID
 	Name        string

@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -56,10 +57,18 @@ func (q *Queries) DeleteUserByID(ctx context.Context, id uuid.UUID) error {
 
 const getAllUsers = `-- name: GetAllUsers :many
 SELECT id, username, email, hashed_password, created_at, updated_at, role from users
+ORDER BY username
+LIMIT $1
+OFFSET $2
 `
 
-func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getAllUsers)
+type GetAllUsersParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) GetAllUsers(ctx context.Context, arg GetAllUsersParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getAllUsers, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +160,52 @@ func (q *Queries) GetUserRole(ctx context.Context, id uuid.UUID) (string, error)
 	var role string
 	err := row.Scan(&role)
 	return role, err
+}
+
+const searchUsers = `-- name: SearchUsers :many
+SELECT id, username, email, hashed_password, created_at, updated_at, role FROM users
+WHERE username ILIKE '%' || $1 || '%'
+OR email ILIKE '%' || $1 || '%'
+ORDER BY created_at DESC
+LIMIT $2 
+OFFSET $3
+`
+
+type SearchUsersParams struct {
+	Column1 sql.NullString
+	Limit   int32
+	Offset  int32
+}
+
+func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, searchUsers, arg.Column1, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Email,
+			&i.HashedPassword,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Role,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateUser = `-- name: UpdateUser :one

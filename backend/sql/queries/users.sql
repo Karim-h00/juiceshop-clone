@@ -43,7 +43,18 @@ SELECT * from users
 WHERE id = $1;
 
 -- name: GetAllUsers :many
-SELECT * from users;
+SELECT * from users
+ORDER BY username
+LIMIT $1
+OFFSET $2;
+
+-- name: SearchUsers :many
+SELECT * FROM users
+WHERE username ILIKE '%' || $1 || '%'
+OR email ILIKE '%' || $1 || '%'
+ORDER BY created_at DESC
+LIMIT $2 
+OFFSET $3;
 
 -- name: UpdateUserRole :exec
 UPDATE users

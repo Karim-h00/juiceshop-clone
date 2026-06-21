@@ -2,9 +2,11 @@ import { useAuthStore } from "../store/authStore"
 import type { userData } from "../types"
 import { BASE_URL } from "./config"
 
-export const getAllUsers = async (): Promise<userData[]> => {
+export const getAllUsers = async ({ search }: { search: string }): Promise<userData[]> => {
     const token = useAuthStore.getState().token
-    const response = await fetch(`${BASE_URL}/api/admin/users`, {
+    const params = new URLSearchParams()
+    if (search) params.set("q", search)
+    const response = await fetch(`${BASE_URL}/api/admin/users?${params}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

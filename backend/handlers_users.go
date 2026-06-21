@@ -1,8 +1,10 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,23 +21,66 @@ func (cfg *config) handlerGetAllUsers(w http.ResponseWriter, r *http.Request) {
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
 	}
-	data, err := cfg.queries.GetAllUsers(r.Context())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "no users found")
-		return
-	}
 
-	users := make([]userResponse, len(data))
-	for i, u := range data {
-		users[i] = userResponse{
-			ID:        u.ID,
-			Username:  u.Username,
-			Email:     u.Email,
-			Role:      u.Role,
-			CreatedAt: u.CreatedAt,
-			UpdatedAt: u.UpdatedAt,
+	page := 1
+
+	pageStr := r.URL.Query().Get("page")
+	if pageStr != "" {
+		parsedPage, err := strconv.Atoi(pageStr)
+		if err != nil {
+			respondWithError(w, 400, "invalid page number")
+			return
+		}
+		page = parsedPage
+	}
+	offset := (page - 1) * 10
+
+	search := r.URL.Query().Get("q")
+	var users []userResponse
+
+	if search == "" {
+		data, err := cfg.queries.GetAllUsers(r.Context(), database.GetAllUsersParams{
+			Limit:  50,
+			Offset: int32(offset),
+		})
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "no users found")
+			return
+		}
+		users = make([]userResponse, len(data))
+		for i, u := range data {
+			users[i] = userResponse{
+				ID:        u.ID,
+				Username:  u.Username,
+				Email:     u.Email,
+				Role:      u.Role,
+				CreatedAt: u.CreatedAt,
+				UpdatedAt: u.UpdatedAt,
+			}
+		}
+	} else {
+		data, err := cfg.queries.SearchUsers(r.Context(), database.SearchUsersParams{
+			Column1: sql.NullString{String: search, Valid: true},
+			Limit:   50,
+			Offset:  int32(offset),
+		})
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "no users found")
+			return
+		}
+		users = make([]userResponse, len(data))
+		for i, u := range data {
+			users[i] = userResponse{
+				ID:        u.ID,
+				Username:  u.Username,
+				Email:     u.Email,
+				Role:      u.Role,
+				CreatedAt: u.CreatedAt,
+				UpdatedAt: u.UpdatedAt,
+			}
 		}
 	}
+
 	respondWithJSON(w, 200, users)
 }
 

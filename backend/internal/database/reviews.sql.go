@@ -65,7 +65,13 @@ const getJuiceReviews = `-- name: GetJuiceReviews :many
 SELECT reviews.id, reviews.user_id, reviews.juice_id, reviews.rating, reviews.comment, reviews.created_at, reviews.updated_at, users.username FROM reviews
 JOIN users ON reviews.user_id = users.id
 WHERE reviews.juice_id = $1
+LIMIT $2
 `
+
+type GetJuiceReviewsParams struct {
+	JuiceID uuid.UUID
+	Limit   int32
+}
 
 type GetJuiceReviewsRow struct {
 	ID        uuid.UUID
@@ -78,8 +84,8 @@ type GetJuiceReviewsRow struct {
 	Username  string
 }
 
-func (q *Queries) GetJuiceReviews(ctx context.Context, juiceID uuid.UUID) ([]GetJuiceReviewsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getJuiceReviews, juiceID)
+func (q *Queries) GetJuiceReviews(ctx context.Context, arg GetJuiceReviewsParams) ([]GetJuiceReviewsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getJuiceReviews, arg.JuiceID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

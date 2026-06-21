@@ -34,7 +34,10 @@ func (cfg *config) handlerGetReviews(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
-	reviewData, err := cfg.queries.GetJuiceReviews(r.Context(), juiceID)
+	reviewData, err := cfg.queries.GetJuiceReviews(r.Context(), database.GetJuiceReviewsParams{
+		JuiceID: juiceID,
+		Limit:   20,
+	})
 	if err != nil {
 		if err == sql.ErrNoRows {
 			respondWithJSON(w, http.StatusOK, []interface{}{})
