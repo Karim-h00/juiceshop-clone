@@ -28,7 +28,7 @@ func (cfg *config) handlerGetReviews(w http.ResponseWriter, r *http.Request) {
 	juiceID, err := cfg.queries.GetJuiceID(r.Context(), name)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			respondWithJSON(w, http.StatusOK, []interface{}{})
+			respondWithJSON(w, http.StatusOK, []reviewResponse{})
 			return
 		}
 		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")
@@ -40,7 +40,7 @@ func (cfg *config) handlerGetReviews(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {
-			respondWithJSON(w, http.StatusOK, []interface{}{})
+			respondWithJSON(w, http.StatusOK, []reviewResponse{})
 			return
 		}
 		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")

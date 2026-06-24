@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -21,6 +22,7 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	params := Login_parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
+		cfg.logger.Warn("login failed", "reason", "invalid request body", "ip", r.RemoteAddr)
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
@@ -28,12 +30,14 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	user_data, err := cfg.queries.GetPasswordByEmail(r.Context(), params.Email)
 	if err != nil {
-		respondWithError(w, 401, "Wrong email or password!")
+		cfg.logger.Warn("login failed", "reason", "invalid email", "email", params.Email, "ip", r.RemoteAddr)
+		respondWithError(w, 401, "Wrong email or password")
 		return
 	}
 	_, err = auth.CheckPasswordHash(params.Password, user_data.HashedPassword)
 	if err != nil {
-		respondWithError(w, 401, "wrong email or password")
+		cfg.logger.Warn("login failed", "reason", "invalid password", "email", params.Email, "ip", r.RemoteAddr)
+		respondWithError(w, 401, "Wrong email or password")
 		return
 	}
 
@@ -45,6 +49,7 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		cfg.queries.DeleteRefreshTokenByUserID(r.Context(), user_data.ID)
 		refreshTokenStr, err = auth.MakeRefreshToken()
 		if err != nil {
+			cfg.logger.Error("failed to delete existing refresh token", "user_id", user_data.ID, "err", err)
 			respondWithError(w, http.StatusInternalServerError, "Couldn't create refresh token")
 			return
 		}
@@ -57,6 +62,7 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 			ExpiresAt: time.Now().UTC().AddDate(0, 0, 60),
 		})
 		if err != nil {
+			cfg.logger.Error("failed to create refresh token", "user_id", user_data.ID, "err", err)
 			respondWithError(w, 500, "Could not create refresh token")
 			return
 		}
@@ -64,6 +70,7 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	user_token, err := auth.MakeJWT(user_data.ID, cfg.secret, defaultExpiry, user_data.Role)
 	if err != nil {
+		cfg.logger.Error("failed to create jwt", "user_id", user_data.ID, "err", err)
 		respondWithError(w, 500, "Could not create session")
 		return
 	}
@@ -78,13 +85,18 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   60 * 24 * 60 * 60,
 	})
 
-	respondWithJSON(w, 200, User{
-		ID:        user_data.ID,
-		Email:     user_data.Email,
-		Username:  user_data.Username,
-		CreatedAt: user_data.CreatedAt,
-		UpdatedAt: user_data.UpdatedAt,
-		Token:     user_token,
+	cfg.logger.Info("login success", "user_id", user_data.ID, "ip", r.RemoteAddr)
+
+	respondWithJSON(w, 200, struct {
+		ID       uuid.UUID `json:"id"`
+		Email    string    `json:"email"`
+		Username string    `json:"username"`
+		Token    string    `json:"token"`
+	}{
+		ID:       user_data.ID,
+		Email:    user_data.Email,
+		Username: user_data.Username,
+		Token:    user_token,
 	})
 }
 
@@ -101,6 +113,7 @@ func (cfg *config) handlerLogout(w http.ResponseWriter, r *http.Request) {
 		RevokedAt: sql.NullTime{Time: time.Now().UTC(), Valid: true},
 	})
 	if err != nil {
+		cfg.logger.Error("logout failed", "reason", "failed to revoke refresh token", "err", err)
 		respondWithError(w, http.StatusInternalServerError, "couldn't revoke refresh token")
 		return
 	}
@@ -114,6 +127,8 @@ func (cfg *config) handlerLogout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1,
 	})
+
+	cfg.logger.Info("logout success", "ip", r.RemoteAddr)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -126,16 +141,19 @@ func (cfg *config) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 
 	user, err := cfg.queries.GetUserFromRefreshToken(r.Context(), cookie.Value)
 	if err != nil {
+		cfg.logger.Warn("refresh failed", "reason", "invalid or expired refresh token", "ip", r.RemoteAddr)
 		respondWithError(w, 401, "Invalid or expired refresh token")
 		return
 	}
 
 	newToken, err := auth.MakeJWT(user.ID, cfg.secret, time.Hour, user.Role)
 	if err != nil {
+		cfg.logger.Error("failed to create jwt", "user_id", user.ID, "err", err)
 		respondWithError(w, 500, "Could not create token")
 		return
 	}
 
+	cfg.logger.Info("refresh success", "user id", user.ID, "ip", r.RemoteAddr)
 	respondWithJSON(w, 200, struct {
 		Token string `json:"token"`
 	}{Token: newToken})
@@ -146,15 +164,25 @@ func (cfg *config) handlerMe(w http.ResponseWriter, r *http.Request) {
 
 	user, err := cfg.queries.GetUserByID(r.Context(), userID)
 	if err != nil {
-		respondWithError(w, 404, "User not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			cfg.logger.Warn("get me failed", "reason", "user not found", "user id", userID, "ip", r.RemoteAddr)
+			respondWithError(w, http.StatusNotFound, "User not found")
+			return
+		}
+		cfg.logger.Error("get me failed", "reason", "server error", "user id", userID, "ip", r.RemoteAddr)
+		respondWithError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
-	respondWithJSON(w, 200, User{
-		ID:        user.ID,
-		Email:     user.Email,
-		Username:  user.Username,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+	cfg.logger.Info("get me success", "user_id", userID, "ip", r.RemoteAddr)
+	respondWithJSON(w, 200, struct {
+		ID       uuid.UUID `json:"id"`
+		Email    string    `json:"email"`
+		Username string    `json:"username"`
+		Role     string    `json:"role"`
+	}{
+		ID:       user.ID,
+		Email:    user.Email,
+		Username: user.Username,
 	})
 }

@@ -3,11 +3,10 @@ package main
 import (
 	"database/sql"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
-	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"github.com/karim-h00/juiceshop-clone/internal/database"
 	_ "github.com/lib/pq"
@@ -19,15 +18,7 @@ type config struct {
 	assetsRoot string
 	port       string
 	baseURL    string
-}
-
-type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Username  string    `json:"username"`
-	Token     string    `json:"token"`
+	logger     *slog.Logger
 }
 
 func main() {
@@ -62,6 +53,8 @@ func main() {
 		log.Fatal("BASE_URL environment variable is not set")
 	}
 
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+
 	dbQueries := database.New(db)
 	cfg := config{
 		queries:    dbQueries,
@@ -69,6 +62,7 @@ func main() {
 		assetsRoot: assetsRoot,
 		port:       port,
 		baseURL:    baseURL,
+		logger:     logger,
 	}
 
 	ServeMux := http.NewServeMux()
@@ -116,6 +110,6 @@ func main() {
 		Handler: handler,
 	}
 
-	log.Printf("Serving on: http://localhost:%s/api/\n", port)
+	logger.Info("server starting", "addr", "http://localhost:"+port+"/api/")
 	log.Fatal(server.ListenAndServe())
 }
