@@ -37,6 +37,36 @@ export const adminUpdateUser = async (id: string, role: "admin" | "user") => {
     }
 }
 
+export const updateUserData = async(username: string, email: string) => {
+    const token = useAuthStore.getState().token
+    const response = await fetch(`${BASE_URL}/api/users`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({username, email})
+    })
+    if (!response.ok) {
+        throw new Error('Failed to update user')
+    }
+}
+
+export const changePassword = async(password: string, new_password: string) => {
+    const token = useAuthStore.getState().token
+    const response = await fetch(`${BASE_URL}/api/user/password`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({password, new_password})
+    })
+    if (!response.ok) {
+        throw new Error('Failed to change password')
+    }
+}
+
 export const deleteUser = async (id: string) => {
     const token = useAuthStore.getState().token
     const response = await fetch(`${BASE_URL}/api/admin/users/${id}`, {

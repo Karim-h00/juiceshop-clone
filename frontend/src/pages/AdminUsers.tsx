@@ -3,7 +3,7 @@ import type { userData } from "../types"
 import { useGetAllUsers } from "../hooks/useGetAllUsers"
 import { useAdminUpdateUser } from "../hooks/useAdminUpdateUser"
 import { useDeleteUser } from "../hooks/useDeleteUser"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 
 function AdminUsers() {
     const [search, setSearch] = useState("")

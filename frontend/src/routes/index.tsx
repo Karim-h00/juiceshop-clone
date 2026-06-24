@@ -10,6 +10,8 @@ import Signup from "../pages/Signup";
 import AdminOrders from "../pages/AdminOrders";
 import OrderDetails from "../components/OrderDetails";
 import AdminUsers from "../pages/AdminUsers";
+import Profile from "../pages/Profile";
+
 
 export const routes = [
     {
@@ -19,7 +21,8 @@ export const routes = [
             {index: true, element:<Home />},
             {path: 'cart', element: <Cart />},
             {path: '/juices/:juiceName', element: <JuiceDetails />},
-            {path: '/order-history', element: <OrderHistory />}
+            {path: '/order-history', element: <OrderHistory />},
+            {path: 'profile', element: <Profile />}
         ]
     },
     {
