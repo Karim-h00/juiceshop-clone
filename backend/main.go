@@ -13,6 +13,7 @@ import (
 )
 
 type config struct {
+	db         *sql.DB
 	queries    *database.Queries
 	secret     string
 	assetsRoot string
@@ -38,11 +39,6 @@ func main() {
 		log.Fatal("JWT_SECRET environment variable is not set")
 	}
 
-	db, err := sql.Open("postgres", dbURL)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	assetsRoot := os.Getenv("ASSETS_ROOT")
 	if assetsRoot == "" {
 		log.Fatal("ASSETS_ROOT environment variable is not set")
@@ -53,10 +49,15 @@ func main() {
 		log.Fatal("BASE_URL environment variable is not set")
 	}
 
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal(err)
+	}
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	dbQueries := database.New(db)
 	cfg := config{
+		db:         db,
 		queries:    dbQueries,
 		secret:     secret,
 		assetsRoot: assetsRoot,
@@ -89,7 +90,6 @@ func main() {
 	ServeMux.Handle("POST /api/juice/{slug}/reviews", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerAddReview)))
 	ServeMux.Handle("DELETE /api/review/{reviewID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerDeleteReview)))
 
-	ServeMux.Handle("GET /api/admin/test", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminTest)))
 	ServeMux.Handle("POST /api/admin/juice", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAddJuice)))
 	ServeMux.Handle("PUT /api/admin/juice/{juiceID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerUpdateJuice)))
 	ServeMux.Handle("PUT /api/admin/juice/{juiceID}/image", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerUpdateJuiceImage)))

@@ -13,7 +13,7 @@ RETURNING *;
 SELECT reviews.*, users.username FROM reviews
 JOIN users ON reviews.user_id = users.id
 WHERE reviews.juice_id = $1
-ORDER BY created_at DESC
+ORDER BY reviews.created_at DESC
 LIMIT $2;
 
 -- name: GetReviewByID :one

@@ -65,6 +65,7 @@ const getJuiceReviews = `-- name: GetJuiceReviews :many
 SELECT reviews.id, reviews.user_id, reviews.juice_id, reviews.rating, reviews.comment, reviews.created_at, reviews.updated_at, users.username FROM reviews
 JOIN users ON reviews.user_id = users.id
 WHERE reviews.juice_id = $1
+ORDER BY reviews.created_at DESC
 LIMIT $2
 `
 

@@ -20,9 +20,9 @@ VALUES (
     $1,
     $2,
     $3,
-    now(),
-    now(),
-    $4
+    $4,
+    $5,
+    $6
 )
 RETURNING id, name, description, price, created_at, updated_at, image_url, stock
 `
@@ -31,6 +31,8 @@ type AddJuiceParams struct {
 	Name        string
 	Description string
 	Price       int32
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 	Stock       int32
 }
 
@@ -39,6 +41,8 @@ func (q *Queries) AddJuice(ctx context.Context, arg AddJuiceParams) (Juice, erro
 		arg.Name,
 		arg.Description,
 		arg.Price,
+		arg.CreatedAt,
+		arg.UpdatedAt,
 		arg.Stock,
 	)
 	var i Juice
@@ -295,8 +299,8 @@ SET
     description = $2,
     price = $3,
     stock = $4,
-    updated_at = now()
-WHERE id = $5
+    updated_at = $5
+WHERE id = $6
 RETURNING id, name, description, price, created_at, updated_at, image_url, stock
 `
 
@@ -305,6 +309,7 @@ type UpdateJuiceParams struct {
 	Description string
 	Price       int32
 	Stock       int32
+	UpdatedAt   time.Time
 	ID          uuid.UUID
 }
 
@@ -314,6 +319,7 @@ func (q *Queries) UpdateJuice(ctx context.Context, arg UpdateJuiceParams) (Juice
 		arg.Description,
 		arg.Price,
 		arg.Stock,
+		arg.UpdatedAt,
 		arg.ID,
 	)
 	var i Juice
@@ -332,16 +338,19 @@ func (q *Queries) UpdateJuice(ctx context.Context, arg UpdateJuiceParams) (Juice
 
 const updateJuiceImage = `-- name: UpdateJuiceImage :exec
 UPDATE juice
-SET image_url = $1
-WHERE id = $2
+SET 
+    image_url = $1,
+    updated_at = $2
+WHERE id = $3
 `
 
 type UpdateJuiceImageParams struct {
-	ImageUrl string
-	ID       uuid.UUID
+	ImageUrl  string
+	UpdatedAt time.Time
+	ID        uuid.UUID
 }
 
 func (q *Queries) UpdateJuiceImage(ctx context.Context, arg UpdateJuiceImageParams) error {
-	_, err := q.db.ExecContext(ctx, updateJuiceImage, arg.ImageUrl, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateJuiceImage, arg.ImageUrl, arg.UpdatedAt, arg.ID)
 	return err
 }

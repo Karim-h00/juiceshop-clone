@@ -113,11 +113,31 @@ func (cfg *config) handlerDeleteJuice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	now := time.Now().UTC()
+	juice, err := cfg.queries.GetJuiceByID(r.Context(), parsedID)
+	juiceName := ""
+	if err != nil {
+		cfg.logger.Error("get juice for delete", "admin_id", adminID, "error", err, "ip", r.RemoteAddr)
+	} else {
+		juiceName = juice.Name
+	}
+
 	err = cfg.queries.DeleteJuice(r.Context(), parsedID)
 	if err != nil {
 		cfg.logger.Error("delete juice", "admin_id", adminID, "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, http.StatusInternalServerError, "could not delete juice")
 		return
+	}
+	err = cfg.queries.AddLog(r.Context(), database.AddLogParams{
+		UserID:     uuid.NullUUID{UUID: adminID, Valid: true},
+		Action:     "delete_juice",
+		TargetType: "juice",
+		TargetID:   uuid.NullUUID{UUID: parsedID, Valid: true},
+		TargetName: sql.NullString{String: juiceName, Valid: juiceName != ""},
+		CreatedAt:  now,
+	})
+	if err != nil {
+		cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
 	}
 	cfg.logger.Info("delete juice", "admin_id", adminID, "ip", r.RemoteAddr)
 	w.WriteHeader(204)
@@ -162,16 +182,30 @@ func (cfg *config) handlerAddJuice(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 400, "description too big")
 		return
 	}
+	now := time.Now().UTC()
 	juice, err := cfg.queries.AddJuice(r.Context(), database.AddJuiceParams{
 		Name:        params.Name,
 		Description: params.Description,
 		Price:       int32(params.Price),
 		Stock:       int32(params.Stock),
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	})
 	if err != nil {
 		cfg.logger.Error("add juice", "admin_id", adminID, "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, http.StatusInternalServerError, "Error creating juice")
 		return
+	}
+	err = cfg.queries.AddLog(r.Context(), database.AddLogParams{
+		UserID:     uuid.NullUUID{UUID: adminID, Valid: true},
+		Action:     "add_juice",
+		TargetType: "juice",
+		TargetID:   uuid.NullUUID{UUID: juice.ID, Valid: true},
+		TargetName: sql.NullString{String: juice.Name, Valid: true},
+		CreatedAt:  now,
+	})
+	if err != nil {
+		cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
 	}
 	cfg.logger.Info("add juice successful", "admin_id", adminID, "ip", r.RemoteAddr, "juice_name", params.Name)
 	respondWithJSON(w, 201, juice)
@@ -224,17 +258,30 @@ func (cfg *config) handlerUpdateJuice(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 400, "description too big")
 		return
 	}
+	now := time.Now().UTC()
 	juice, err := cfg.queries.UpdateJuice(r.Context(), database.UpdateJuiceParams{
 		ID:          parsedID,
 		Name:        params.Name,
 		Description: params.Description,
 		Price:       int32(params.Price),
 		Stock:       int32(params.Stock),
+		UpdatedAt:   now,
 	})
 	if err != nil {
 		cfg.logger.Error("update juice", "admin_id", adminID, "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, http.StatusInternalServerError, "Error updating juice")
 		return
+	}
+	err = cfg.queries.AddLog(r.Context(), database.AddLogParams{
+		UserID:     uuid.NullUUID{UUID: adminID, Valid: true},
+		Action:     "update_juice",
+		TargetType: "juice",
+		TargetID:   uuid.NullUUID{UUID: parsedID, Valid: true},
+		TargetName: sql.NullString{String: juice.Name, Valid: true},
+		CreatedAt:  now,
+	})
+	if err != nil {
+		cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
 	}
 	cfg.logger.Info("update juice successful", "admin_id", adminID, "ip", r.RemoteAddr, "juice_name", params.Name)
 	respondWithJSON(w, http.StatusOK, juice)
@@ -250,7 +297,7 @@ func (cfg *config) handlerUpdateJuiceImage(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, err = cfg.queries.GetJuiceByID(r.Context(), parsedID)
+	juice, err := cfg.queries.GetJuiceByID(r.Context(), parsedID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			cfg.logger.Warn("update juice img", "reason", "juice not found", "error", err, "ip", r.RemoteAddr)
@@ -303,14 +350,27 @@ func (cfg *config) handlerUpdateJuiceImage(w http.ResponseWriter, r *http.Reques
 
 	url := cfg.getAssetURL(assetPath)
 
+	now := time.Now().UTC()
 	err = cfg.queries.UpdateJuiceImage(r.Context(), database.UpdateJuiceImageParams{
-		ImageUrl: url,
-		ID:       parsedID,
+		ImageUrl:  url,
+		UpdatedAt: now,
+		ID:        parsedID,
 	})
 	if err != nil {
 		cfg.logger.Error("update juice img", "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, http.StatusInternalServerError, "Couldn't update juice")
 		return
+	}
+	err = cfg.queries.AddLog(r.Context(), database.AddLogParams{
+		UserID:     uuid.NullUUID{UUID: adminID, Valid: true},
+		Action:     "update_juice_image",
+		TargetType: "juice",
+		TargetID:   uuid.NullUUID{UUID: parsedID, Valid: true},
+		TargetName: sql.NullString{String: juice.Name, Valid: true},
+		CreatedAt:  now,
+	})
+	if err != nil {
+		cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
 	}
 	cfg.logger.Info("update juice img successful", "admin_id", adminID, "juice_id", juiceID, "ip", r.RemoteAddr)
 	w.WriteHeader(http.StatusOK)

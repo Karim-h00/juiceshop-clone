@@ -68,6 +68,7 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	now := time.Now().UTC()
 	user_token, err := auth.MakeJWT(user_data.ID, cfg.secret, defaultExpiry, user_data.Role)
 	if err != nil {
 		cfg.logger.Error("failed to create jwt", "user_id", user_data.ID, "err", err)
@@ -84,6 +85,20 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   60 * 24 * 60 * 60,
 	})
+
+	if user_data.Role == "admin" {
+		err = cfg.queries.AddLog(r.Context(), database.AddLogParams{
+			UserID:     uuid.NullUUID{UUID: user_data.ID, Valid: false},
+			Action:     "admin_login",
+			TargetType: "login",
+			TargetID:   uuid.NullUUID{UUID: user_data.ID, Valid: false},
+			TargetName: sql.NullString{String: user_data.Username, Valid: true},
+			CreatedAt:  now,
+		})
+		if err != nil {
+			cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
+		}
+	}
 
 	cfg.logger.Info("login success", "user_id", user_data.ID, "ip", r.RemoteAddr)
 

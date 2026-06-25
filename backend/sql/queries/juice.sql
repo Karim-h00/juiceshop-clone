@@ -43,9 +43,9 @@ VALUES (
     $1,
     $2,
     $3,
-    now(),
-    now(),
-    $4
+    $4,
+    $5,
+    $6
 )
 RETURNING *;
 
@@ -56,14 +56,16 @@ SET
     description = $2,
     price = $3,
     stock = $4,
-    updated_at = now()
-WHERE id = $5
+    updated_at = $5
+WHERE id = $6
 RETURNING *;
 
 -- name: UpdateJuiceImage :exec
 UPDATE juice
-SET image_url = $1
-WHERE id = $2;
+SET 
+    image_url = $1,
+    updated_at = $2
+WHERE id = $3;
 
 -- name: DeleteJuice :exec
 DELETE FROM juice 
