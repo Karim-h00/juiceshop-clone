@@ -166,8 +166,6 @@ func (cfg *config) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 500, "Could not create token")
 		return
 	}
-
-	cfg.logger.Info("refresh success", "user id", user.ID, "ip", getClientIP(r))
 	respondWithJSON(w, 200, struct {
 		Token string `json:"token"`
 	}{Token: newToken})
