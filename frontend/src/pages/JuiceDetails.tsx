@@ -6,11 +6,7 @@ import ReviewForm from "../components/ReviewForm"
 
 function JuiceDetails() {
   const { juiceName } = useParams<{ juiceName: string }>()
-  const decoded = juiceName!
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
-  const { data, isLoading, isError } = useGetJuiceByName(decoded)
+  const { data, isLoading, isError } = useGetJuiceByName(juiceName!)
   const { addItem } = useCartStore()
 
   if (isLoading) return <div>Loading...</div>

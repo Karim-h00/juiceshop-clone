@@ -1,4 +1,6 @@
+import { useEffect } from "react"
 import { Link, useLocation, Outlet } from "react-router-dom"
+import { useAuthStore } from "../store/authStore"
 
 const navLinks = [
   { to: "/admin/products", label: "Products" },
@@ -9,6 +11,12 @@ const navLinks = [
 
 function AdminLayout() {
   const { pathname } = useLocation()
+
+  const initialize = useAuthStore((s)=>s.initialize)
+  
+  useEffect(()=>{
+    initialize()
+  },[])
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">

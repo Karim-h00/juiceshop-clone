@@ -80,7 +80,7 @@ func main() {
 	ServeMux.Handle("GET /api/me", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerMe)))
 
 	ServeMux.HandleFunc("GET /api", cfg.handlerGetJuice)
-	ServeMux.HandleFunc("GET /api/juice/{juiceName}", cfg.handlerGetJuiceByName)
+	ServeMux.HandleFunc("GET /api/juice/{slug}", cfg.handlerGetJuiceByName)
 
 	ServeMux.Handle("POST /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerOrderJuice)))
 	ServeMux.Handle("GET /api/order", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerGetUserOrderHistory)))

@@ -152,7 +152,7 @@ func (cfg *config) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
 	params := user_update_params{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		cfg.logger.Warn("update user", "user_id", userID, "reason", "failed to decode body", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Warn("update user", "user_id", userID, "reason", "failed to decode body", "error", err, "ip", getClientIP(r))
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
@@ -189,7 +189,7 @@ func (cfg *config) handlerAdminUpdate(w http.ResponseWriter, r *http.Request) {
 	userID := r.PathValue("userID")
 	parsedID, err := uuid.Parse(userID)
 	if err != nil {
-		cfg.logger.Warn("admin update user", "user_id", callerID, "reason", "failed to parse user id", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Warn("admin update user", "user_id", callerID, "reason", "failed to parse user id", "error", err, "ip", getClientIP(r))
 		respondWithError(w, 400, "failed to parse ID")
 		return
 	}
@@ -199,7 +199,7 @@ func (cfg *config) handlerAdminUpdate(w http.ResponseWriter, r *http.Request) {
 
 	err = decoder.Decode(&params)
 	if err != nil {
-		cfg.logger.Warn("admin update user", "user_id", callerID, "reason", "failed to decode body", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Warn("admin update user", "user_id", callerID, "reason", "failed to decode body", "error", err, "ip", getClientIP(r))
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
@@ -234,7 +234,7 @@ func (cfg *config) handlerAdminUpdate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		cfg.logger.Error("add audit log", "error", err)
 	}
-	cfg.logger.Info("admin update user", "admin_id", callerID, "target_id", parsedID, "ip", r.RemoteAddr)
+	cfg.logger.Info("admin update user", "admin_id", callerID, "target_id", parsedID, "ip", getClientIP(r))
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -249,7 +249,7 @@ func (cfg *config) handlerUpdatePassword(w http.ResponseWriter, r *http.Request)
 	params := update_password{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		cfg.logger.Warn("update user password", "user_id", userID, "reason", "failed to decode body", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Warn("update user password", "user_id", userID, "reason", "failed to decode body", "error", err, "ip", getClientIP(r))
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
@@ -263,7 +263,7 @@ func (cfg *config) handlerUpdatePassword(w http.ResponseWriter, r *http.Request)
 
 	_, err = auth.CheckPasswordHash(params.Password, db_password)
 	if err != nil {
-		cfg.logger.Warn("update password", "user_id", userID, "reason", "wrong password", "ip", r.RemoteAddr)
+		cfg.logger.Warn("update password", "user_id", userID, "reason", "wrong password", "ip", getClientIP(r))
 		respondWithError(w, 401, "wrong password")
 		return
 	}

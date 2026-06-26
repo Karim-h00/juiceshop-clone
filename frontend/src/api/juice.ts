@@ -10,8 +10,8 @@ export const getJuices = async (): Promise<JuiceData[]> => {
     return response.json()
 }
 
-export const getJuiceByName = async (juiceName: string): Promise<JuiceData> => {
-    const response = await fetch(`${BASE_URL}/api/juice/${juiceName}`)
+export const getJuiceByName = async (slug: string): Promise<JuiceData> => {
+    const response = await fetch(`${BASE_URL}/api/juice/${slug}`)
     if (!response.ok) {
         throw new Error('Failed to fetch juice data')
     }

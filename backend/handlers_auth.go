@@ -22,7 +22,7 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	params := Login_parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		cfg.logger.Warn("login failed", "reason", "invalid request body", "ip", r.RemoteAddr)
+		cfg.logger.Warn("login failed", "reason", "invalid request body", "ip", getClientIP(r))
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
@@ -30,13 +30,13 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	user_data, err := cfg.queries.GetPasswordByEmail(r.Context(), params.Email)
 	if err != nil {
-		cfg.logger.Warn("login failed", "reason", "invalid email", "ip", r.RemoteAddr)
+		cfg.logger.Warn("login failed", "reason", "invalid email", "ip", getClientIP(r))
 		respondWithError(w, 401, "Wrong email or password")
 		return
 	}
 	_, err = auth.CheckPasswordHash(params.Password, user_data.HashedPassword)
 	if err != nil {
-		cfg.logger.Warn("login failed", "reason", "invalid password", "ip", r.RemoteAddr)
+		cfg.logger.Warn("login failed", "reason", "invalid password", "ip", getClientIP(r))
 		respondWithError(w, 401, "Wrong email or password")
 		return
 	}
@@ -96,11 +96,11 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 			CreatedAt:  now,
 		})
 		if err != nil {
-			cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
+			cfg.logger.Error("add audit log", "error", err, "ip", getClientIP(r))
 		}
 	}
 
-	cfg.logger.Info("login success", "user_id", user_data.ID, "ip", r.RemoteAddr)
+	cfg.logger.Info("login success", "user_id", user_data.ID, "ip", getClientIP(r))
 
 	respondWithJSON(w, 200, struct {
 		ID       uuid.UUID `json:"id"`
@@ -155,7 +155,7 @@ func (cfg *config) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 
 	user, err := cfg.queries.GetUserFromRefreshToken(r.Context(), cookie.Value)
 	if err != nil {
-		cfg.logger.Warn("refresh failed", "reason", "invalid or expired refresh token", "ip", r.RemoteAddr)
+		cfg.logger.Warn("refresh failed", "reason", "invalid or expired refresh token", "ip", getClientIP(r))
 		respondWithError(w, 401, "Invalid or expired refresh token")
 		return
 	}
@@ -167,7 +167,7 @@ func (cfg *config) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cfg.logger.Info("refresh success", "user id", user.ID, "ip", r.RemoteAddr)
+	cfg.logger.Info("refresh success", "user id", user.ID, "ip", getClientIP(r))
 	respondWithJSON(w, 200, struct {
 		Token string `json:"token"`
 	}{Token: newToken})
@@ -179,11 +179,11 @@ func (cfg *config) handlerMe(w http.ResponseWriter, r *http.Request) {
 	user, err := cfg.queries.GetUserByID(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			cfg.logger.Warn("get me failed", "reason", "user not found", "user id", userID, "ip", r.RemoteAddr)
+			cfg.logger.Warn("get me failed", "reason", "user not found", "user id", userID, "ip", getClientIP(r))
 			respondWithError(w, http.StatusNotFound, "User not found")
 			return
 		}
-		cfg.logger.Error("get me failed", "reason", "server error", "user id", userID, "ip", r.RemoteAddr)
+		cfg.logger.Error("get me failed", "reason", "server error", "user id", userID, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}

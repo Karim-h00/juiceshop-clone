@@ -2,34 +2,16 @@ import { Outlet } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import './index.css'
 import { useEffect } from 'react'
-import { getMe, refresh } from './api/auth'
 import { useAuthStore } from './store/authStore'
 
 function App() {
 
-  const { setAuth, isLoading } = useAuthStore()
-  const clearAuth = useAuthStore((s) => s.clearAuth)
+  const initialize = useAuthStore((s) => s.initialize)
 
-  const decodeToken = (token: string) => {
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-    return payload
-  }
 
   useEffect(() => {
-    refresh()
-      .then(async (token) => {
-        const payload = decodeToken(token)
-        const me = await getMe(token)
-        setAuth(token, {
-          username: me.username,
-          email: me.email,
-          role: payload.role,
-        })
-      })
-      .catch(() => clearAuth())
+    initialize()
   }, [])
-
-  if (isLoading) return null
 
   return (
     <>

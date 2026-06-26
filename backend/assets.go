@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"net"
+	"net/http"
 	"path/filepath"
 	"strings"
 )
@@ -44,4 +46,20 @@ func slugToName(slug string) string {
 		}
 	}
 	return strings.Join(words, " ")
+}
+
+func getClientIP(r *http.Request) string {
+	if ip := r.Header.Get("Fly-Client-IP"); ip != "" {
+		return ip
+	}
+	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+		parts := strings.SplitN(forwarded, ",", 2)
+		return strings.TrimSpace(parts[0])
+	}
+
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return ip
 }

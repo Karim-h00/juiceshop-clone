@@ -64,7 +64,8 @@ func (cfg *config) handlerGetJuice(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *config) handlerGetJuiceByName(w http.ResponseWriter, r *http.Request) {
-	juiceName := r.PathValue("juiceName")
+	slug := r.PathValue("slug")
+	juiceName := slugToName(slug)
 
 	row, err := cfg.queries.GetJuiceDetails(r.Context(), juiceName)
 	if err != nil {
@@ -72,7 +73,7 @@ func (cfg *config) handlerGetJuiceByName(w http.ResponseWriter, r *http.Request)
 			respondWithError(w, http.StatusNotFound, "Juice not found")
 			return
 		}
-		cfg.logger.Error("get juice details", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("get juice details", "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
@@ -107,7 +108,7 @@ func (cfg *config) handlerDeleteJuice(w http.ResponseWriter, r *http.Request) {
 	juiceID := r.PathValue("juiceID")
 	parsedID, err := uuid.Parse(juiceID)
 	if err != nil {
-		cfg.logger.Warn("delete juice", "reason", "failed to parse juice id", "juice_id", juiceID, "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Warn("delete juice", "reason", "failed to parse juice id", "juice_id", juiceID, "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusBadRequest, "failed to parse ID")
 		return
 	}
@@ -116,14 +117,14 @@ func (cfg *config) handlerDeleteJuice(w http.ResponseWriter, r *http.Request) {
 	juice, err := cfg.queries.GetJuiceByID(r.Context(), parsedID)
 	juiceName := ""
 	if err != nil {
-		cfg.logger.Error("get juice for delete", "admin_id", adminID, "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("get juice for delete", "admin_id", adminID, "error", err, "ip", getClientIP(r))
 	} else {
 		juiceName = juice.Name
 	}
 
 	err = cfg.queries.DeleteJuice(r.Context(), parsedID)
 	if err != nil {
-		cfg.logger.Error("delete juice", "admin_id", adminID, "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("delete juice", "admin_id", adminID, "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "could not delete juice")
 		return
 	}
@@ -138,7 +139,7 @@ func (cfg *config) handlerDeleteJuice(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		cfg.logger.Error("add audit log", "error", err)
 	}
-	cfg.logger.Info("delete juice", "admin_id", adminID, "ip", r.RemoteAddr)
+	cfg.logger.Info("delete juice", "admin_id", adminID, "ip", getClientIP(r))
 	w.WriteHeader(204)
 }
 
@@ -187,7 +188,7 @@ func (cfg *config) handlerAddJuice(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:   now,
 	})
 	if err != nil {
-		cfg.logger.Error("add juice", "admin_id", adminID, "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("add juice", "admin_id", adminID, "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "Error creating juice")
 		return
 	}
@@ -202,7 +203,7 @@ func (cfg *config) handlerAddJuice(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		cfg.logger.Error("add audit log", "error", err)
 	}
-	cfg.logger.Info("add juice successful", "admin_id", adminID, "ip", r.RemoteAddr, "juice_name", params.Name)
+	cfg.logger.Info("add juice successful", "admin_id", adminID, "juice_name", params.Name, "ip", getClientIP(r))
 	respondWithJSON(w, 201, juice)
 }
 
@@ -228,28 +229,28 @@ func (cfg *config) handlerUpdateJuice(w http.ResponseWriter, r *http.Request) {
 
 	err = decoder.Decode(&params)
 	if err != nil {
-		cfg.logger.Error("update juice", "admin_id", adminID, "reason", "error decoding params", "error", err)
+		cfg.logger.Error("update juice", "admin_id", adminID, "reason", "error decoding params", "error", err, "ip", getClientIP(r))
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
 
 	if params.Name == "" {
-		cfg.logger.Warn("update juice", "reason", "name parameter empty", "ip", r.RemoteAddr)
+		cfg.logger.Warn("update juice", "reason", "name parameter empty", "ip", getClientIP(r))
 		respondWithError(w, 400, "Name is required")
 		return
 	}
 	if params.Price <= 0 {
-		cfg.logger.Warn("update juice", "reason", "price parameter 0 or negative", "ip", r.RemoteAddr)
+		cfg.logger.Warn("update juice", "reason", "price parameter 0 or negative", "ip", getClientIP(r))
 		respondWithError(w, 400, "price must be positive")
 		return
 	}
 	if params.Stock < 0 {
-		cfg.logger.Warn("update juice", "reason", "stock parameter negative", "ip", r.RemoteAddr)
+		cfg.logger.Warn("update juice", "reason", "stock parameter negative", "ip", getClientIP(r))
 		respondWithError(w, 400, "stock must not be negative")
 		return
 	}
 	if len(params.Description) > 500 {
-		cfg.logger.Warn("update juice", "reason", "description param too big", "ip", r.RemoteAddr)
+		cfg.logger.Warn("update juice", "reason", "description param too big", "ip", getClientIP(r))
 		respondWithError(w, 400, "description too big")
 		return
 	}
@@ -263,7 +264,7 @@ func (cfg *config) handlerUpdateJuice(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:   now,
 	})
 	if err != nil {
-		cfg.logger.Error("update juice", "admin_id", adminID, "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("update juice", "admin_id", adminID, "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "Error updating juice")
 		return
 	}
@@ -276,9 +277,9 @@ func (cfg *config) handlerUpdateJuice(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:  now,
 	})
 	if err != nil {
-		cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("add audit log", "error", err, "ip", getClientIP(r))
 	}
-	cfg.logger.Info("update juice successful", "admin_id", adminID, "ip", r.RemoteAddr, "juice_name", params.Name)
+	cfg.logger.Info("update juice successful", "admin_id", adminID, "juice_name", params.Name, "ip", getClientIP(r))
 	respondWithJSON(w, http.StatusOK, juice)
 }
 
@@ -295,11 +296,11 @@ func (cfg *config) handlerUpdateJuiceImage(w http.ResponseWriter, r *http.Reques
 	juice, err := cfg.queries.GetJuiceByID(r.Context(), parsedID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			cfg.logger.Warn("update juice img", "reason", "juice not found", "error", err, "ip", r.RemoteAddr)
+			cfg.logger.Warn("update juice img", "reason", "juice not found", "error", err, "ip", getClientIP(r))
 			respondWithError(w, http.StatusNotFound, "Juice not found")
 			return
 		}
-		cfg.logger.Error("update juice img", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("update juice img", "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
@@ -309,19 +310,19 @@ func (cfg *config) handlerUpdateJuiceImage(w http.ResponseWriter, r *http.Reques
 
 	file, header, err := r.FormFile("juiceImage")
 	if err != nil {
-		cfg.logger.Error("update juice img", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("update juice img", "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusBadRequest, "Unable to parse form file")
 		return
 	}
 	defer file.Close()
 	mediaType, _, err := mime.ParseMediaType(header.Header.Get("Content-Type"))
 	if err != nil {
-		cfg.logger.Error("update juice img", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("update juice img", "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusBadRequest, "Invalid Content-Type")
 		return
 	}
 	if mediaType != "image/jpeg" && mediaType != "image/png" {
-		cfg.logger.Warn("update juice img", "reason", "invalid media type", "media_type", mediaType, "ip", r.RemoteAddr)
+		cfg.logger.Warn("update juice img", "reason", "invalid media type", "media_type", mediaType, "ip", getClientIP(r))
 		respondWithError(w, http.StatusBadRequest, "Invalid file type")
 		return
 	}
@@ -331,14 +332,14 @@ func (cfg *config) handlerUpdateJuiceImage(w http.ResponseWriter, r *http.Reques
 
 	dst, err := os.Create(assetDiskPath)
 	if err != nil {
-		cfg.logger.Error("update juice img", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("update juice img", "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "Unable to create file")
 		return
 	}
 	defer dst.Close()
 
 	if _, err := io.Copy(dst, file); err != nil {
-		cfg.logger.Error("update juice img", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("update juice img", "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "Error saving file")
 		return
 	}
@@ -352,7 +353,7 @@ func (cfg *config) handlerUpdateJuiceImage(w http.ResponseWriter, r *http.Reques
 		ID:        parsedID,
 	})
 	if err != nil {
-		cfg.logger.Error("update juice img", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("update juice img", "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "Couldn't update juice")
 		return
 	}
@@ -365,8 +366,8 @@ func (cfg *config) handlerUpdateJuiceImage(w http.ResponseWriter, r *http.Reques
 		CreatedAt:  now,
 	})
 	if err != nil {
-		cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("add audit log", "error", err, "ip", getClientIP(r))
 	}
-	cfg.logger.Info("update juice img successful", "admin_id", adminID, "juice_id", juiceID, "ip", r.RemoteAddr)
+	cfg.logger.Info("update juice img successful", "admin_id", adminID, "juice_id", juiceID, "ip", getClientIP(r))
 	w.WriteHeader(http.StatusOK)
 }

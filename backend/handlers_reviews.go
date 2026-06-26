@@ -92,13 +92,13 @@ func (cfg *config) handlerAddReview(w http.ResponseWriter, r *http.Request) {
 	params := reviewParams{}
 	err = decoder.Decode(&params)
 	if err != nil {
-		cfg.logger.Warn("add review", "user_id", userID, "reason", "failed to decode body", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Warn("add review", "user_id", userID, "reason", "failed to decode body", "error", err, "ip", getClientIP(r))
 		respondWithError(w, 400, "error decoding params")
 		return
 	}
 
 	if params.Rating < 1 || params.Rating > 5 {
-		cfg.logger.Warn("add review", "user_id", userID, "reason", "rating invalid", "ip", r.RemoteAddr)
+		cfg.logger.Warn("add review", "user_id", userID, "reason", "rating invalid", "ip", getClientIP(r))
 		respondWithError(w, 400, "rating must be between 1 and 5")
 		return
 	}
@@ -111,7 +111,7 @@ func (cfg *config) handlerAddReview(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "unique_user_juice_review") {
-			cfg.logger.Warn("add review", "user_id", userID, "reason", "user already added a rating", "error", err, "ip", r.RemoteAddr)
+			cfg.logger.Warn("add review", "user_id", userID, "reason", "user already added a rating", "error", err, "ip", getClientIP(r))
 			respondWithError(w, 409, "You have already reviewed this juice")
 			return
 		}
@@ -129,7 +129,7 @@ func (cfg *config) handlerDeleteReview(w http.ResponseWriter, r *http.Request) {
 	reviewID := r.PathValue("reviewID")
 	parsedID, err := uuid.Parse(reviewID)
 	if err != nil {
-		cfg.logger.Warn("delete juice", "user_id", userID, "reason", "failed to parse review id", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Warn("delete juice", "user_id", userID, "reason", "failed to parse review id", "error", err, "ip", getClientIP(r))
 		respondWithError(w, 400, "invalid review ID")
 		return
 	}
@@ -146,14 +146,14 @@ func (cfg *config) handlerDeleteReview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if review.UserID != userID && role != "admin" {
-		cfg.logger.Warn("delete review", "user", userID, "reason", "invalid user", "ip", r.RemoteAddr)
+		cfg.logger.Warn("delete review", "user", userID, "reason", "invalid user", "ip", getClientIP(r))
 		respondWithError(w, http.StatusForbidden, "Forbidden")
 		return
 	}
 
 	err = cfg.queries.DeleteReview(r.Context(), parsedID)
 	if err != nil {
-		cfg.logger.Error("delete review", "user_id", userID, "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("delete review", "user_id", userID, "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
@@ -167,6 +167,6 @@ func (cfg *config) handlerDeleteReview(w http.ResponseWriter, r *http.Request) {
 			TargetName: sql.NullString{String: review.UserID.String(), Valid: true},
 		})
 	}
-	cfg.logger.Info("delete review", "user_id", userID, "ip", r.RemoteAddr)
+	cfg.logger.Info("delete review", "user_id", userID, "ip", getClientIP(r))
 	w.WriteHeader(204)
 }
