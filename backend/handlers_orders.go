@@ -62,7 +62,7 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 
 	juices, err := cfg.queries.GetJuicesByIDs(r.Context(), juiceIDs)
 	if err != nil {
-		cfg.logger.Error("order juice", "reason", "failed to fetch juices", "user_id", userID, "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("order juice", "reason", "failed to fetch juices", "user_id", userID, "error", err)
 		respondWithError(w, http.StatusInternalServerError, "Could not fetch juices")
 		return
 	}
@@ -93,7 +93,7 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 
 	tx, err := cfg.db.BeginTx(r.Context(), nil)
 	if err != nil {
-		cfg.logger.Error("order juice", "reason", "failed to start transaction", "user_id", userID, "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("order juice", "reason", "failed to start transaction", "user_id", userID, "error", err)
 		respondWithError(w, 500, "Could not start transaction")
 		return
 	}
@@ -106,7 +106,7 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 		Total:  computedTotal,
 	})
 	if err != nil {
-		cfg.logger.Error("order juice", "reason", "failed to create order", "user_id", userID, "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("order juice", "reason", "failed to create order", "user_id", userID, "error", err)
 		respondWithError(w, 500, "Could not create order")
 		return
 	}
@@ -118,7 +118,7 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 			Quantity: int32(item.Quantity),
 		})
 		if err != nil {
-			cfg.logger.Error("order juice", "reason", "failed to create order item", "user_id", userID, "order_id", order.ID, "error", err, "ip", r.RemoteAddr)
+			cfg.logger.Error("order juice", "reason", "failed to create order item", "user_id", userID, "order_id", order.ID, "error", err)
 			respondWithError(w, http.StatusInternalServerError, "Could not create order item")
 			return
 		}
@@ -127,13 +127,13 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 			Stock: int32(item.Quantity),
 		})
 		if err != nil {
-			cfg.logger.Error("order juice", "reason", "failed to decrement stock", "user_id", userID, "order_id", order.ID, "error", err, "ip", r.RemoteAddr)
+			cfg.logger.Error("order juice", "reason", "failed to decrement stock", "user_id", userID, "order_id", order.ID, "error", err)
 			respondWithError(w, http.StatusInternalServerError, "Could not update stock")
 			return
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		cfg.logger.Error("order juice", "reason", "failed to commit transaction", "user_id", userID, "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("order juice", "reason", "failed to commit transaction", "user_id", userID, "error", err)
 		respondWithError(w, http.StatusInternalServerError, "Could not complete order")
 		return
 	}
@@ -147,7 +147,7 @@ func (cfg *config) handlerOrderJuice(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:  now,
 	})
 	if err != nil {
-		cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("add audit log", "error", err)
 	}
 
 	type orderItemResponse struct {
@@ -192,6 +192,7 @@ func (cfg *config) handlerGetUserOrderHistory(w http.ResponseWriter, r *http.Req
 		Offset: 0,
 	})
 	if err != nil {
+		cfg.logger.Error("get order history", "user_id", userID, "error", err)
 		respondWithError(w, 500, "Could not fetch orders")
 		return
 	}
@@ -200,6 +201,7 @@ func (cfg *config) handlerGetUserOrderHistory(w http.ResponseWriter, r *http.Req
 	for i, order := range orders {
 		items, err := cfg.queries.GetOrderItemsByOrderID(r.Context(), order.ID)
 		if err != nil {
+			cfg.logger.Error("get order history(items)", "user_id", userID, "error", err)
 			respondWithError(w, 500, "Could not fetch order items")
 			return
 		}
@@ -239,7 +241,7 @@ func (cfg *config) handlerGetOrderByID(w http.ResponseWriter, r *http.Request) {
 			respondWithError(w, 404, "order not found")
 			return
 		}
-		cfg.logger.Warn("get order by id", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("get order by id", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "order not found")
 		return
 	}
@@ -264,7 +266,6 @@ func (cfg *config) handlerGetOrderByID(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cfg.logger.Info("get order by id success", "user_id", userID, "ip", r.RemoteAddr)
 	respondWithJSON(w, 200, orderResponse{
 		OrderID:   order.ID.String(),
 		Total:     order.Total,
@@ -286,7 +287,7 @@ func (cfg *config) handlerDeleteOrder(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC()
 	err = cfg.queries.DeleteOrderByOrderID(r.Context(), parsedID)
 	if err != nil {
-		cfg.logger.Error("delete order", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("delete order", "error", err)
 		respondWithError(w, 500, "Couldn't delete order")
 		return
 	}
@@ -299,7 +300,7 @@ func (cfg *config) handlerDeleteOrder(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:  now,
 	})
 	if err != nil {
-		cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("add audit log", "error", err)
 	}
 	cfg.logger.Info("delete order", "admin_id", adminID, "order_id", orderID, "ip", r.RemoteAddr)
 	w.WriteHeader(204)
@@ -327,68 +328,6 @@ func (cfg *config) handlerAdminGetAllOrders(w http.ResponseWriter, r *http.Reque
 		respondWithError(w, http.StatusInternalServerError, "Couldn't get orders")
 		return
 	}
-	cfg.logger.Info("get all orders", "page", page, "ip", r.RemoteAddr)
+	cfg.logger.Info("get all orders", "page", page)
 	respondWithJSON(w, http.StatusOK, orderData)
-}
-
-func (cfg *config) handlerAdminGetUserOrders(w http.ResponseWriter, r *http.Request) {
-
-	adminID := r.Context().Value(contextKeyUserID).(uuid.UUID)
-	userIDstr := r.PathValue("userID")
-	userID, err := uuid.Parse(userIDstr)
-	if err != nil {
-		cfg.logger.Warn("invalid user id", "user_id", userID, "ip", r.RemoteAddr)
-		respondWithError(w, 400, "failed to parse ID")
-		return
-	}
-
-	page := 1
-
-	pageStr := r.URL.Query().Get("page")
-	if pageStr != "" {
-		parsedPage, err := strconv.Atoi(pageStr)
-		if err != nil {
-			cfg.logger.Warn("invalid page number", "page", pageStr, "ip", r.RemoteAddr)
-			respondWithError(w, 400, "invalid page number")
-			return
-		}
-		page = parsedPage
-	}
-	offset := (page - 1) * 10
-
-	ordersData, err := cfg.queries.GetOrdersByUserID(r.Context(), database.GetOrdersByUserIDParams{
-		UserID: userID,
-		Limit:  10,
-		Offset: int32(offset),
-	})
-	if err != nil {
-		cfg.logger.Error("get user orders", "error", err, "ip", r.RemoteAddr)
-		respondWithError(w, http.StatusInternalServerError, "Couldn't get orders")
-		return
-	}
-
-	result := make([]orderResponse, len(ordersData))
-	for i, order := range ordersData {
-		items, err := cfg.queries.GetOrderItemsByOrderID(r.Context(), order.ID)
-		if err != nil {
-			cfg.logger.Error("get order details", "error", err, "ip", r.RemoteAddr)
-			respondWithError(w, 500, "Could not fetch order items")
-			return
-		}
-		itemsResp := make([]orderItems, len(items))
-		for j, item := range items {
-			itemsResp[j] = orderItems{
-				Name:     item.Name,
-				Quantity: item.Quantity,
-			}
-		}
-		result[i] = orderResponse{
-			OrderID:   order.ID.String(),
-			Total:     order.Total,
-			CreatedAt: order.CreatedAt,
-			Items:     itemsResp,
-		}
-	}
-	cfg.logger.Info("get user orders", "admin_id", adminID, "user_id", userID, "ip", r.RemoteAddr)
-	respondWithJSON(w, http.StatusOK, result)
 }

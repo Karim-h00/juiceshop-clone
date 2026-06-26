@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/karim-h00/juiceshop-clone/internal/auth"
 	"github.com/karim-h00/juiceshop-clone/internal/database"
+	"github.com/lib/pq"
 )
 
 type User struct {
@@ -53,7 +55,8 @@ func (cfg *config) handlerGetAllUsers(w http.ResponseWriter, r *http.Request) {
 			Offset: int32(offset),
 		})
 		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, "no users found")
+			cfg.logger.Error("get users", "error", err)
+			respondWithError(w, http.StatusInternalServerError, "Failed to fetch users")
 			return
 		}
 		users = make([]userResponse, len(data))
@@ -74,7 +77,8 @@ func (cfg *config) handlerGetAllUsers(w http.ResponseWriter, r *http.Request) {
 			Offset:  int32(offset),
 		})
 		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, "no users found")
+			cfg.logger.Error("search users", "error", err)
+			respondWithError(w, http.StatusInternalServerError, "Failed to fetch users")
 			return
 		}
 		users = make([]userResponse, len(data))
@@ -123,6 +127,7 @@ func (cfg *config) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 		HashedPassword: hashed_password,
 	})
 	if err != nil {
+		cfg.logger.Error("create user", "error", err)
 		respondWithError(w, 500, "Error creating user")
 		return
 	}
@@ -147,6 +152,7 @@ func (cfg *config) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
 	params := user_update_params{}
 	err := decoder.Decode(&params)
 	if err != nil {
+		cfg.logger.Warn("update user", "user_id", userID, "reason", "failed to decode body", "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
@@ -156,10 +162,16 @@ func (cfg *config) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
 		ID:       userID,
 	})
 	if err != nil {
-		respondWithError(w, 500, "Error creating user")
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			respondWithError(w, http.StatusConflict, "username or email already taken")
+			return
+		}
+		cfg.logger.Error("update user", "error", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to update user")
 		return
 	}
-	respondWithJSON(w, 200, user)
+	respondWithJSON(w, http.StatusOK, user)
 }
 
 func (cfg *config) handlerAdminUpdate(w http.ResponseWriter, r *http.Request) {
@@ -168,7 +180,7 @@ func (cfg *config) handlerAdminUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	role := r.Context().Value(contextKeyRole).(string)
 	if role != "admin" {
-		respondWithError(w, 403, "Forbidden")
+		respondWithError(w, http.StatusForbidden, "Forbidden")
 		return
 	}
 
@@ -177,6 +189,7 @@ func (cfg *config) handlerAdminUpdate(w http.ResponseWriter, r *http.Request) {
 	userID := r.PathValue("userID")
 	parsedID, err := uuid.Parse(userID)
 	if err != nil {
+		cfg.logger.Warn("admin update user", "user_id", callerID, "reason", "failed to parse user id", "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, 400, "failed to parse ID")
 		return
 	}
@@ -186,6 +199,7 @@ func (cfg *config) handlerAdminUpdate(w http.ResponseWriter, r *http.Request) {
 
 	err = decoder.Decode(&params)
 	if err != nil {
+		cfg.logger.Warn("admin update user", "user_id", callerID, "reason", "failed to decode body", "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
@@ -206,10 +220,22 @@ func (cfg *config) handlerAdminUpdate(w http.ResponseWriter, r *http.Request) {
 		ID:   parsedID,
 	})
 	if err != nil {
+		cfg.logger.Error("admin update user", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "couldn't update user")
 		return
 	}
-	w.WriteHeader(200)
+	err = cfg.queries.AddLog(r.Context(), database.AddLogParams{
+		UserID:     uuid.NullUUID{UUID: callerID, Valid: true},
+		Action:     "update_role",
+		TargetType: "user",
+		TargetID:   uuid.NullUUID{UUID: parsedID, Valid: true},
+		TargetName: sql.NullString{String: params.Role, Valid: true},
+	})
+	if err != nil {
+		cfg.logger.Error("add audit log", "error", err)
+	}
+	cfg.logger.Info("admin update user", "admin_id", callerID, "target_id", parsedID, "ip", r.RemoteAddr)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (cfg *config) handlerUpdatePassword(w http.ResponseWriter, r *http.Request) {
@@ -223,18 +249,21 @@ func (cfg *config) handlerUpdatePassword(w http.ResponseWriter, r *http.Request)
 	params := update_password{}
 	err := decoder.Decode(&params)
 	if err != nil {
+		cfg.logger.Warn("update user password", "user_id", userID, "reason", "failed to decode body", "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
 
 	db_password, err := cfg.queries.GetPasswordByUserID(r.Context(), userID)
 	if err != nil {
-		respondWithError(w, 400, "something went wrong")
+		cfg.logger.Error("update password", "user_id", userID, "error", err)
+		respondWithError(w, http.StatusInternalServerError, "something went wrong")
 		return
 	}
 
 	_, err = auth.CheckPasswordHash(params.Password, db_password)
 	if err != nil {
+		cfg.logger.Warn("update password", "user_id", userID, "reason", "wrong password", "ip", r.RemoteAddr)
 		respondWithError(w, 401, "wrong password")
 		return
 	}
@@ -248,19 +277,19 @@ func (cfg *config) handlerUpdatePassword(w http.ResponseWriter, r *http.Request)
 	}
 	hashedPassword, err := auth.HashPassword(params.NewPassword)
 	if err != nil {
-		respondWithError(w, 500, "could not hash password")
+		respondWithError(w, http.StatusInternalServerError, "could not hash password")
 		return
 	}
 	err = cfg.queries.UpdateUserPassword(r.Context(), database.UpdateUserPasswordParams{
 		ID:             userID,
 		HashedPassword: hashedPassword,
 	})
-
 	if err != nil {
-		respondWithError(w, 500, "could not update password")
+		cfg.logger.Error("update user password", "error", err)
+		respondWithError(w, http.StatusInternalServerError, "could not update password")
 		return
 	}
-	respondWithJSON(w, 200, struct{}{})
+	w.WriteHeader(http.StatusOK)
 }
 
 func (cfg *config) handlerDeleteUser(w http.ResponseWriter, r *http.Request) {
@@ -286,8 +315,16 @@ func (cfg *config) handlerDeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	err = cfg.queries.DeleteUserByID(r.Context(), parsedID)
 	if err != nil {
+		cfg.logger.Error("delete user", "admin_id", callerID, "error", err)
 		respondWithError(w, http.StatusInternalServerError, "something went wrong")
 		return
 	}
+	cfg.queries.AddLog(r.Context(), database.AddLogParams{
+		UserID:     uuid.NullUUID{UUID: callerID, Valid: true},
+		Action:     "delete",
+		TargetType: "user",
+		TargetID:   uuid.NullUUID{UUID: parsedID, Valid: true},
+		TargetName: sql.NullString{Valid: false},
+	})
 	w.WriteHeader(204)
 }

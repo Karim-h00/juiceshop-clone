@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -28,9 +29,10 @@ func (cfg *config) handlerGetReviews(w http.ResponseWriter, r *http.Request) {
 	juiceID, err := cfg.queries.GetJuiceID(r.Context(), name)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			respondWithJSON(w, http.StatusOK, []reviewResponse{})
+			respondWithError(w, http.StatusNotFound, "juice not found")
 			return
 		}
+		cfg.logger.Error("get juiceID for reviews", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
@@ -43,6 +45,7 @@ func (cfg *config) handlerGetReviews(w http.ResponseWriter, r *http.Request) {
 			respondWithJSON(w, http.StatusOK, []reviewResponse{})
 			return
 		}
+		cfg.logger.Error("get reviews", "error", err)
 		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
@@ -77,10 +80,11 @@ func (cfg *config) handlerAddReview(w http.ResponseWriter, r *http.Request) {
 
 	juiceID, err := cfg.queries.GetJuiceID(r.Context(), name)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			respondWithJSON(w, http.StatusOK, []reviewParams{})
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "juice is unavailable")
 			return
 		}
+		cfg.logger.Error("get juiceID to add reviews", "user_id", userID, "error", err)
 		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
@@ -88,11 +92,13 @@ func (cfg *config) handlerAddReview(w http.ResponseWriter, r *http.Request) {
 	params := reviewParams{}
 	err = decoder.Decode(&params)
 	if err != nil {
+		cfg.logger.Warn("add review", "user_id", userID, "reason", "failed to decode body", "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, 400, "error decoding params")
 		return
 	}
 
 	if params.Rating < 1 || params.Rating > 5 {
+		cfg.logger.Warn("add review", "user_id", userID, "reason", "rating invalid", "ip", r.RemoteAddr)
 		respondWithError(w, 400, "rating must be between 1 and 5")
 		return
 	}
@@ -105,9 +111,11 @@ func (cfg *config) handlerAddReview(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "unique_user_juice_review") {
+			cfg.logger.Warn("add review", "user_id", userID, "reason", "user already added a rating", "error", err, "ip", r.RemoteAddr)
 			respondWithError(w, 409, "You have already reviewed this juice")
 			return
 		}
+		cfg.logger.Error("add reviews", "user_id", userID, "error", err)
 		respondWithError(w, 500, "Error creating review")
 		return
 	}
@@ -121,26 +129,44 @@ func (cfg *config) handlerDeleteReview(w http.ResponseWriter, r *http.Request) {
 	reviewID := r.PathValue("reviewID")
 	parsedID, err := uuid.Parse(reviewID)
 	if err != nil {
+		cfg.logger.Warn("delete juice", "user_id", userID, "reason", "failed to parse review id", "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, 400, "invalid review ID")
 		return
 	}
 
 	review, err := cfg.queries.GetReviewByID(r.Context(), parsedID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "review not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "Review not found")
+			return
+		}
+		cfg.logger.Error("delete review", "user_id", userID, "error", err)
+		respondWithError(w, http.StatusInternalServerError, "failed to fetch review")
 		return
 	}
 
 	if review.UserID != userID && role != "admin" {
-		respondWithError(w, http.StatusForbidden, "forbidden")
+		cfg.logger.Warn("delete review", "user", userID, "reason", "invalid user", "ip", r.RemoteAddr)
+		respondWithError(w, http.StatusForbidden, "Forbidden")
 		return
 	}
 
 	err = cfg.queries.DeleteReview(r.Context(), parsedID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "could not delete review")
+		cfg.logger.Error("delete review", "user_id", userID, "error", err, "ip", r.RemoteAddr)
+		respondWithError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
 
+	if role == "admin" && review.UserID != userID {
+		cfg.queries.AddLog(r.Context(), database.AddLogParams{
+			UserID:     uuid.NullUUID{UUID: userID, Valid: true},
+			Action:     "delete",
+			TargetType: "review",
+			TargetID:   uuid.NullUUID{UUID: parsedID, Valid: true},
+			TargetName: sql.NullString{String: review.UserID.String(), Valid: true},
+		})
+	}
+	cfg.logger.Info("delete review", "user_id", userID, "ip", r.RemoteAddr)
 	w.WriteHeader(204)
 }

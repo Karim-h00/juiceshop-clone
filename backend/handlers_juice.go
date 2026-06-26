@@ -69,7 +69,6 @@ func (cfg *config) handlerGetJuiceByName(w http.ResponseWriter, r *http.Request)
 	row, err := cfg.queries.GetJuiceDetails(r.Context(), juiceName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			cfg.logger.Warn("get juice details", "reason", "juice not found", "error", err, "ip", r.RemoteAddr)
 			respondWithError(w, http.StatusNotFound, "Juice not found")
 			return
 		}
@@ -108,7 +107,7 @@ func (cfg *config) handlerDeleteJuice(w http.ResponseWriter, r *http.Request) {
 	juiceID := r.PathValue("juiceID")
 	parsedID, err := uuid.Parse(juiceID)
 	if err != nil {
-		cfg.logger.Warn("delete juice", "reason", "failed to parse juice id", "error", err)
+		cfg.logger.Warn("delete juice", "reason", "failed to parse juice id", "juice_id", juiceID, "error", err, "ip", r.RemoteAddr)
 		respondWithError(w, http.StatusBadRequest, "failed to parse ID")
 		return
 	}
@@ -137,7 +136,7 @@ func (cfg *config) handlerDeleteJuice(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:  now,
 	})
 	if err != nil {
-		cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("add audit log", "error", err)
 	}
 	cfg.logger.Info("delete juice", "admin_id", adminID, "ip", r.RemoteAddr)
 	w.WriteHeader(204)
@@ -158,27 +157,23 @@ func (cfg *config) handlerAddJuice(w http.ResponseWriter, r *http.Request) {
 
 	err := decoder.Decode(&params)
 	if err != nil {
-		cfg.logger.Error("add juice", "admin_id", adminID, "reason", "error decoding params", "error", err)
+		cfg.logger.Warn("add juice", "admin_id", adminID, "reason", "error decoding params", "error", err)
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
 	if params.Name == "" {
-		cfg.logger.Warn("add juice", "reason", "name parameter empty", "ip", r.RemoteAddr)
 		respondWithError(w, 400, "Name is required")
 		return
 	}
 	if params.Price <= 0 {
-		cfg.logger.Warn("add juice", "reason", "price parameter 0 or negative", "ip", r.RemoteAddr)
 		respondWithError(w, 400, "price must be positive")
 		return
 	}
 	if params.Stock < 0 {
-		cfg.logger.Warn("add juice", "reason", "stock parameter negative", "ip", r.RemoteAddr)
 		respondWithError(w, 400, "stock must not be negative")
 		return
 	}
 	if len(params.Description) > 500 {
-		cfg.logger.Warn("add juice", "reason", "description param too big", "ip", r.RemoteAddr)
 		respondWithError(w, 400, "description too big")
 		return
 	}
@@ -205,7 +200,7 @@ func (cfg *config) handlerAddJuice(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:  now,
 	})
 	if err != nil {
-		cfg.logger.Error("add audit log", "error", err, "ip", r.RemoteAddr)
+		cfg.logger.Error("add audit log", "error", err)
 	}
 	cfg.logger.Info("add juice successful", "admin_id", adminID, "ip", r.RemoteAddr, "juice_name", params.Name)
 	respondWithJSON(w, 201, juice)

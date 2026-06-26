@@ -100,7 +100,6 @@ func main() {
 	ServeMux.Handle("DELETE /api/admin/users/{userID}", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerDeleteUser)))
 
 	ServeMux.Handle("DELETE /api/admin/order/{orderID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerDeleteOrder)))
-	ServeMux.Handle("GET /api/admin/order/{userID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminGetUserOrders)))
 	ServeMux.Handle("GET /api/admin/orders", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminGetAllOrders)))
 
 	handler := middlewareCORS(ServeMux)

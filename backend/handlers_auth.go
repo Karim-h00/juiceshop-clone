@@ -30,13 +30,13 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	user_data, err := cfg.queries.GetPasswordByEmail(r.Context(), params.Email)
 	if err != nil {
-		cfg.logger.Warn("login failed", "reason", "invalid email", "email", params.Email, "ip", r.RemoteAddr)
+		cfg.logger.Warn("login failed", "reason", "invalid email", "ip", r.RemoteAddr)
 		respondWithError(w, 401, "Wrong email or password")
 		return
 	}
 	_, err = auth.CheckPasswordHash(params.Password, user_data.HashedPassword)
 	if err != nil {
-		cfg.logger.Warn("login failed", "reason", "invalid password", "email", params.Email, "ip", r.RemoteAddr)
+		cfg.logger.Warn("login failed", "reason", "invalid password", "ip", r.RemoteAddr)
 		respondWithError(w, 401, "Wrong email or password")
 		return
 	}
@@ -88,10 +88,10 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	if user_data.Role == "admin" {
 		err = cfg.queries.AddLog(r.Context(), database.AddLogParams{
-			UserID:     uuid.NullUUID{UUID: user_data.ID, Valid: false},
+			UserID:     uuid.NullUUID{UUID: user_data.ID, Valid: true},
 			Action:     "admin_login",
 			TargetType: "login",
-			TargetID:   uuid.NullUUID{UUID: user_data.ID, Valid: false},
+			TargetID:   uuid.NullUUID{UUID: user_data.ID, Valid: true},
 			TargetName: sql.NullString{String: user_data.Username, Valid: true},
 			CreatedAt:  now,
 		})
@@ -143,7 +143,6 @@ func (cfg *config) handlerLogout(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   -1,
 	})
 
-	cfg.logger.Info("logout success", "ip", r.RemoteAddr)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -189,7 +188,6 @@ func (cfg *config) handlerMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cfg.logger.Info("get me success", "user_id", userID, "ip", r.RemoteAddr)
 	respondWithJSON(w, 200, struct {
 		ID       uuid.UUID `json:"id"`
 		Email    string    `json:"email"`
