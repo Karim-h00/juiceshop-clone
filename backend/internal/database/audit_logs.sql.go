@@ -46,3 +46,46 @@ func (q *Queries) AddLog(ctx context.Context, arg AddLogParams) error {
 	)
 	return err
 }
+
+const getAuditLogs = `-- name: GetAuditLogs :many
+SELECT id, user_id, action, target_type, target_id, target_name, created_at FROM audit_logs
+ORDER BY created_at DESC
+LIMIT $1
+OFFSET $2
+`
+
+type GetAuditLogsParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) GetAuditLogs(ctx context.Context, arg GetAuditLogsParams) ([]AuditLog, error) {
+	rows, err := q.db.QueryContext(ctx, getAuditLogs, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AuditLog
+	for rows.Next() {
+		var i AuditLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Action,
+			&i.TargetType,
+			&i.TargetID,
+			&i.TargetName,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

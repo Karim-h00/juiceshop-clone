@@ -18,7 +18,7 @@ function AdminUsers() {
         return () => clearTimeout(timer)
     }, [search])
 
-    const { data, isLoading, isFetching, isError } = useGetAllUsers({ search: debouncedSearch, page })
+    const { data, isLoading, isError } = useGetAllUsers({ search: debouncedSearch, page })
 
     const roleMutation = useAdminUpdateUser()
     const deleteMutation = useDeleteUser()
@@ -54,11 +54,6 @@ function AdminUsers() {
                             <th className="px-4 py-3">Actions</th>
                         </tr>
                     </thead>
-                    {isFetching &&
-                        <div className="absolute top-2 right-2 text-xs text-blue-500">
-                            Updating...
-                        </div>
-                    }
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
                         {data?.map((user: userData) => {
                             const isAdmin = user.role === "admin"

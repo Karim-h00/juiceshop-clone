@@ -102,6 +102,8 @@ func main() {
 	ServeMux.Handle("DELETE /api/admin/order/{orderID}", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerDeleteOrder)))
 	ServeMux.Handle("GET /api/admin/orders", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerAdminGetAllOrders)))
 
+	ServeMux.Handle("GET /api/admin/audits", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerGetAuditLogs)))
+
 	handler := middlewareCORS(ServeMux)
 
 	server := &http.Server{

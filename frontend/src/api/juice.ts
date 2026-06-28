@@ -15,9 +15,7 @@ export const getJuiceByName = async (slug: string): Promise<JuiceData> => {
     if (!response.ok) {
         throw new Error('Failed to fetch juice data')
     }
-    let data = response.json()
-    console.log(data)
-    return data
+    return response.json()
 }
 
 export const deleteJuice = async (juiceID: string) => {

@@ -27,9 +27,11 @@ WHERE id = $1;
 -- name: GetAllOrders :many
 SELECT orders.*, users.username FROM orders
 JOIN users ON orders.user_id = users.id
+WHERE ($1::text = '' OR users.username ILIKE '%' || $1::text || '%'
+    OR users.email ILIKE '%' || $1::text || '%')
 ORDER BY orders.created_at DESC
 LIMIT 10
-OFFSET $1;
+OFFSET $2;
 
 -- name: DeleteOrderByOrderID :exec
 DELETE FROM orders 

@@ -11,6 +11,7 @@ import AdminOrders from "../pages/AdminOrders";
 import OrderDetails from "../components/OrderDetails";
 import AdminUsers from "../pages/AdminUsers";
 import Profile from "../pages/Profile";
+import AdminAuditLogs from "../pages/AdminAuditLogs";
 
 
 export const routes = [
@@ -41,7 +42,8 @@ export const routes = [
             {path: 'products', element:<AdminProducts />},
             {path: 'orders', element:<AdminOrders />},
             {path: 'orders/:id', element:<OrderDetails />},
-            {path: 'users', element: <AdminUsers />}
+            {path: 'users', element: <AdminUsers />},
+            {path: 'audits', element: <AdminAuditLogs />}
         ]
     }
 ]

@@ -9,3 +9,9 @@ VALUES (
     $5,
     $6
 );
+
+-- name: GetAuditLogs :many
+SELECT * FROM audit_logs
+ORDER BY created_at DESC
+LIMIT $1
+OFFSET $2;

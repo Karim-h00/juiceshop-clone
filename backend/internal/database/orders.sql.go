@@ -72,10 +72,17 @@ func (q *Queries) DeleteOrderByOrderID(ctx context.Context, id uuid.UUID) error 
 const getAllOrders = `-- name: GetAllOrders :many
 SELECT orders.id, orders.total, orders.created_at, orders.user_id, users.username FROM orders
 JOIN users ON orders.user_id = users.id
+WHERE ($1::text = '' OR users.username ILIKE '%' || $1::text || '%'
+    OR users.email ILIKE '%' || $1::text || '%')
 ORDER BY orders.created_at DESC
 LIMIT 10
-OFFSET $1
+OFFSET $2
 `
+
+type GetAllOrdersParams struct {
+	Column1 string
+	Offset  int32
+}
 
 type GetAllOrdersRow struct {
 	ID        uuid.UUID
@@ -85,8 +92,8 @@ type GetAllOrdersRow struct {
 	Username  string
 }
 
-func (q *Queries) GetAllOrders(ctx context.Context, offset int32) ([]GetAllOrdersRow, error) {
-	rows, err := q.db.QueryContext(ctx, getAllOrders, offset)
+func (q *Queries) GetAllOrders(ctx context.Context, arg GetAllOrdersParams) ([]GetAllOrdersRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllOrders, arg.Column1, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

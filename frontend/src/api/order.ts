@@ -60,11 +60,11 @@ export const getOrderByID = async (orderID: string): Promise<OrderDetail> => {
     return response.json()
 }
 
-export const getAdminOrders = async (page?: number) =>  {
+export const getAdminOrders = async ({ search, page }: { search: string, page: number }) =>  {
     const token = useAuthStore.getState().token
     const url = new URL(`${BASE_URL}/api/admin/orders`)
     if (page) url.searchParams.set("page", page.toString())
-    
+    if (search) url.searchParams.set("search", search)
     const response = await fetch(url, {
         headers: {
             "Content-Type": 'application/json',

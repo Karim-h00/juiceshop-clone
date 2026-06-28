@@ -320,9 +320,13 @@ func (cfg *config) handlerAdminGetAllOrders(w http.ResponseWriter, r *http.Reque
 		}
 		page = parsedPage
 	}
+	search := r.URL.Query().Get("search")
 	offset := (page - 1) * 10
 
-	orderData, err := cfg.queries.GetAllOrders(r.Context(), int32(offset))
+	orderData, err := cfg.queries.GetAllOrders(r.Context(), database.GetAllOrdersParams{
+		Column1: search,
+		Offset:  int32(offset),
+	})
 	if err != nil {
 		cfg.logger.Error("get all orders", "page", page, "error", err, "ip", getClientIP(r))
 		respondWithError(w, http.StatusInternalServerError, "Couldn't get orders")
@@ -331,65 +335,3 @@ func (cfg *config) handlerAdminGetAllOrders(w http.ResponseWriter, r *http.Reque
 	cfg.logger.Info("get all orders", "page", page)
 	respondWithJSON(w, http.StatusOK, orderData)
 }
-
-// func (cfg *config) handlerAdminGetUserOrders(w http.ResponseWriter, r *http.Request) {
-
-// 	adminID := r.Context().Value(contextKeyUserID).(uuid.UUID)
-// 	userIDstr := r.PathValue("userID")
-// 	userID, err := uuid.Parse(userIDstr)
-// 	if err != nil {
-// 		cfg.logger.Warn("invalid user id", "user_id", userID, "ip", getClientIP(r))
-// 		respondWithError(w, 400, "failed to parse ID")
-// 		return
-// 	}
-
-// 	page := 1
-
-// 	pageStr := r.URL.Query().Get("page")
-// 	if pageStr != "" {
-// 		parsedPage, err := strconv.Atoi(pageStr)
-// 		if err != nil {
-// 			cfg.logger.Warn("invalid page number", "page", pageStr, "ip", getClientIP(r))
-// 			respondWithError(w, 400, "invalid page number")
-// 			return
-// 		}
-// 		page = parsedPage
-// 	}
-// 	offset := (page - 1) * 10
-
-// 	ordersData, err := cfg.queries.GetOrdersByUserID(r.Context(), database.GetOrdersByUserIDParams{
-// 		UserID: userID,
-// 		Limit:  10,
-// 		Offset: int32(offset),
-// 	})
-// 	if err != nil {
-// 		cfg.logger.Error("get user orders", "error", err)
-// 		respondWithError(w, http.StatusInternalServerError, "Couldn't get orders")
-// 		return
-// 	}
-
-// 	result := make([]orderResponse, len(ordersData))
-// 	for i, order := range ordersData {
-// 		items, err := cfg.queries.GetOrderItemsByOrderID(r.Context(), order.ID)
-// 		if err != nil {
-// 			cfg.logger.Error("get order details", "error", err)
-// 			respondWithError(w, 500, "Could not fetch order items")
-// 			return
-// 		}
-// 		itemsResp := make([]orderItems, len(items))
-// 		for j, item := range items {
-// 			itemsResp[j] = orderItems{
-// 				Name:     item.Name,
-// 				Quantity: item.Quantity,
-// 			}
-// 		}
-// 		result[i] = orderResponse{
-// 			OrderID:   order.ID.String(),
-// 			Total:     order.Total,
-// 			CreatedAt: order.CreatedAt,
-// 			Items:     itemsResp,
-// 		}
-// 	}
-// 	cfg.logger.Info("get user orders", "admin_id", adminID, "user_id", userID, "ip", getClientIP(r))
-// 	respondWithJSON(w, http.StatusOK, result)
-// }

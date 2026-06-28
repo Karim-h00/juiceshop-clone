@@ -78,3 +78,13 @@ export type userData = {
   created_at: string
   updated_at: string
 }
+
+export type AuditLogData = {
+    id: string
+    user_id: string
+    action: string
+    target_type: string
+    target_id: string
+    target_name: string
+    created_at: string
+}

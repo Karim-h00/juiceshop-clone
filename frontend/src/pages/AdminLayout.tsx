@@ -6,7 +6,7 @@ const navLinks = [
   { to: "/admin/products", label: "Products" },
   { to: "/admin/orders", label: "Orders" },
   { to: "/admin/users", label: "Users" },
-  { to: "/admin/audit", label: "Audit Log" },
+  { to: "/admin/audits", label: "Audit Log" },
 ]
 
 function AdminLayout() {

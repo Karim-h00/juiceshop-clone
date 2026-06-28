@@ -230,6 +230,7 @@ func (cfg *config) handlerAdminUpdate(w http.ResponseWriter, r *http.Request) {
 		TargetType: "user",
 		TargetID:   uuid.NullUUID{UUID: parsedID, Valid: true},
 		TargetName: sql.NullString{String: params.Role, Valid: true},
+		CreatedAt:  time.Now().UTC(),
 	})
 	if err != nil {
 		cfg.logger.Error("add audit log", "error", err)
@@ -325,6 +326,7 @@ func (cfg *config) handlerDeleteUser(w http.ResponseWriter, r *http.Request) {
 		TargetType: "user",
 		TargetID:   uuid.NullUUID{UUID: parsedID, Valid: true},
 		TargetName: sql.NullString{Valid: false},
+		CreatedAt:  time.Now().UTC(),
 	})
 	w.WriteHeader(204)
 }
