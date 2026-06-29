@@ -1,6 +1,7 @@
 import { useState } from "react"
-import { useSignup } from "../hooks/useSignup"
 import { useNavigate } from 'react-router-dom';
+import { useSignup } from "../hooks/useSignup"
+import { useCheckPassword } from "../hooks/useCheckPassword";
 
 function Signup() {
 
@@ -9,18 +10,41 @@ function Signup() {
         username: '',
         password: ''
     })
+    const [clientError, setClientError] = useState<string | null>(null)
 
     const handleSignup = useSignup()
+    const checkPassword = useCheckPassword()
     const navigate = useNavigate()
-    
+
+    const handlePasswordBlur = () => {
+        if (credentials.password.length < 8) return
+        checkPassword.mutate(credentials.password)
+    }
+
+    const validate = () => {
+        const usernameRe = /^[a-zA-Z0-9_-]{3,32}$/
+        if (!usernameRe.test(credentials.username)) {
+            return "Username must be 3-32 characters, letters/numbers/_ only"
+        }
+        if (credentials.password.length < 8 || credentials.password.length > 128) {
+            return "Password must be 8-128 characters"
+        }
+        return null
+    }
+
     const handleSubmit = (e: React.SubmitEvent) => {
-    e.preventDefault();
-    handleSignup.mutate(credentials, {
-      onSuccess: () => {
-        navigate('/login')
-      }
-    })
-  }
+        e.preventDefault();
+        const error = validate()
+        if (error) {
+            setClientError(error)
+            return
+        }
+        handleSignup.mutate(credentials, {
+            onSuccess: () => {
+                navigate('/login')
+            }
+        })
+    }
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 shadow-2xl">
             <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl">
@@ -52,7 +76,7 @@ function Signup() {
                             </div>
 
                             <div>
-                                <label htmlFor="email" className="block text-sm font-medium dark:text-gray-300">
+                                <label htmlFor="username" className="block text-sm font-medium dark:text-gray-300">
                                     username
                                 </label>
                                 <input
@@ -81,6 +105,7 @@ function Signup() {
                                     type="password"
                                     required
                                     value={credentials.password}
+                                    onBlur={handlePasswordBlur}
                                     onChange={(e) =>
                                         setCredentials({ ...credentials, password: e.target.value })
                                     }
@@ -89,15 +114,25 @@ function Signup() {
                                     aria-invalid={handleSignup.isError}
                                     aria-describedby="signup-error"
                                 />
+                                {checkPassword.data?.pwned && (
+                                    <p className="text-yellow-500 text-sm mt-1">
+                                        ⚠️ This password has appeared in known data breaches. Consider using a different one.
+                                    </p>
+                                )}
                             </div>
 
                             <button
                                 type="submit"
                                 disabled={handleSignup.isPending}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full flex justify-center py-2 px-4 mt-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {handleSignup.isPending ? "signing up…" : "Sign up"}
                             </button>
+                            {(clientError || handleSignup.isError) && (
+                                <p id="signup-error" className="text-red-500 text-sm mt-2">
+                                    {clientError || "Signup failed, please try again"}
+                                </p>
+                            )}
                         </div>
                     </form>
                 </div>

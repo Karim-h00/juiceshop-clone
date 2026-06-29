@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -24,6 +25,11 @@ func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		cfg.logger.Warn("login failed", "reason", "invalid request body", "ip", getClientIP(r))
 		respondWithError(w, 400, "Error decoding params")
+		return
+	}
+	err = validateLoginInput(params.Email, params.Password)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("%v", err))
 		return
 	}
 	const defaultExpiry = time.Hour
@@ -196,4 +202,8 @@ func (cfg *config) handlerMe(w http.ResponseWriter, r *http.Request) {
 		Email:    user.Email,
 		Username: user.Username,
 	})
+}
+
+func (cfg *config) hanlderCheckPwn(w http.ResponseWriter, r *http.Request) {
+
 }

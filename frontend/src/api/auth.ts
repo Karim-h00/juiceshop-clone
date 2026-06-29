@@ -61,3 +61,13 @@ export const getMe = async (token: string): Promise<MeRes> => {
     if (!response.ok) throw new Error('Not authenticated')
     return response.json()
 }
+
+export const checkPassword = async (password: string): Promise<{ pwned: boolean }> => {
+    const res = await fetch('/api/check-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+    })
+    if (!res.ok) throw new Error('Failed to check password')
+    return res.json()
+}

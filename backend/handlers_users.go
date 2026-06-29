@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -111,13 +112,14 @@ func (cfg *config) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 400, "Error decoding params")
 		return
 	}
-	if params.Password == "" {
-		respondWithError(w, 400, "password is required")
+	err = validateRegisterInput(params.Email, params.Username, params.Password)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("%v", err))
 		return
 	}
 	hashed_password, err := auth.HashPassword(params.Password)
 	if err != nil {
-		respondWithError(w, 500, "Error creating user")
+		respondWithError(w, http.StatusInternalServerError, "Error creating user")
 		return
 	}
 
@@ -128,7 +130,7 @@ func (cfg *config) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		cfg.logger.Error("create user", "error", err)
-		respondWithError(w, 500, "Error creating user")
+		respondWithError(w, http.StatusInternalServerError, "Error creating user")
 		return
 	}
 	respondWithJSON(w, 201, User{
