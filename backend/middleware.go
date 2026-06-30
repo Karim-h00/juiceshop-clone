@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/karim-h00/juiceshop-clone/internal/auth"
+	"github.com/karim-h00/juiceshop-clone/internal/ratelimit"
 )
 
 func (cfg *config) middlewareCheckAdmin(next http.Handler) http.Handler {
@@ -81,4 +82,20 @@ func middlewareCORS(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (cfg *config) RateLimitMiddleware(limiter *ratelimit.Limiter) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ip := getClientIP(r)
+
+			if !limiter.Allow(ip) {
+				cfg.logger.Warn("rate limit exceeded", "ip", ip, "path", r.URL.Path)
+				respondWithError(w, http.StatusTooManyRequests, "too many requests")
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }

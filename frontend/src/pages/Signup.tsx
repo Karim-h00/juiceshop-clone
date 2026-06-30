@@ -39,6 +39,10 @@ function Signup() {
             setClientError(error)
             return
         }
+        if (checkPassword.isPending) {
+            setClientError("Checking password security, please wait...")
+            return
+        }
         handleSignup.mutate(credentials, {
             onSuccess: () => {
                 navigate('/login')

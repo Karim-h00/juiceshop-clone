@@ -63,7 +63,7 @@ export const getMe = async (token: string): Promise<MeRes> => {
 }
 
 export const checkPassword = async (password: string): Promise<{ pwned: boolean }> => {
-    const res = await fetch('/api/check-password', {
+    const res = await fetch(`${BASE_URL}/api/check-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })

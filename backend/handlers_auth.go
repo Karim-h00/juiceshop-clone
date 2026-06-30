@@ -1,17 +1,27 @@
 package main
 
 import (
+	"crypto/sha1"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/karim-h00/juiceshop-clone/internal/auth"
 	"github.com/karim-h00/juiceshop-clone/internal/database"
 )
+
+func handlerReadiness(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(http.StatusText(http.StatusOK)))
+}
 
 func (cfg *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
@@ -204,6 +214,57 @@ func (cfg *config) handlerMe(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (cfg *config) hanlderCheckPwn(w http.ResponseWriter, r *http.Request) {
+func (cfg *config) handlerCheckPwn(w http.ResponseWriter, r *http.Request) {
+	type req struct {
+		Password string `json:"password"`
+	}
+	type resp struct {
+		Pwned   bool   `json:"pwned"`
+		Message string `json:"message,omitempty"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	params := req{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Error decoding params")
+		return
+	}
+
+	hash := sha1.Sum([]byte(params.Password))
+	hexHash := strings.ToUpper(hex.EncodeToString(hash[:]))
+	prefix, suffix := hexHash[:5], hexHash[5:]
+
+	res, err := http.Get("https://api.pwnedpasswords.com/range/" + prefix)
+	if err != nil {
+		cfg.logger.Error("hipb request failed", "error", err)
+		respondWithError(w, http.StatusInternalServerError, "could not check password")
+		return
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not read response")
+		return
+	}
+
+	found := false
+	for _, line := range strings.Split(string(body), "\r\n") {
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) == 2 && parts[0] == suffix {
+			found = true
+			break
+		}
+	}
+
+	if found {
+		respondWithJSON(w, http.StatusOK, resp{
+			Pwned:   true,
+			Message: "this password has appeared in known data breaches",
+		})
+		return
+	}
+	respondWithJSON(w, http.StatusOK, resp{Pwned: false})
 
 }

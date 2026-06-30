@@ -6,20 +6,25 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/karim-h00/juiceshop-clone/internal/database"
+	"github.com/karim-h00/juiceshop-clone/internal/ratelimit"
 	_ "github.com/lib/pq"
+	"golang.org/x/time/rate"
 )
 
 type config struct {
-	db         *sql.DB
-	queries    *database.Queries
-	secret     string
-	assetsRoot string
-	port       string
-	baseURL    string
-	logger     *slog.Logger
+	db            *sql.DB
+	queries       *database.Queries
+	secret        string
+	assetsRoot    string
+	port          string
+	baseURL       string
+	logger        *slog.Logger
+	globalLimiter *ratelimit.Limiter
+	authLimiter   *ratelimit.Limiter
 }
 
 func main() {
@@ -57,13 +62,15 @@ func main() {
 
 	dbQueries := database.New(db)
 	cfg := config{
-		db:         db,
-		queries:    dbQueries,
-		secret:     secret,
-		assetsRoot: assetsRoot,
-		port:       port,
-		baseURL:    baseURL,
-		logger:     logger,
+		db:            db,
+		queries:       dbQueries,
+		secret:        secret,
+		assetsRoot:    assetsRoot,
+		port:          port,
+		baseURL:       baseURL,
+		logger:        logger,
+		globalLimiter: ratelimit.New(rate.Every(time.Second), 20, 30*time.Minute),
+		authLimiter:   ratelimit.New(rate.Every(10*time.Second), 5, 30*time.Minute),
 	}
 
 	ServeMux := http.NewServeMux()
@@ -71,10 +78,12 @@ func main() {
 	assetsHandler := http.StripPrefix("/assets", http.FileServer(http.Dir(assetsRoot)))
 	ServeMux.Handle("/assets/", assetsHandler)
 
-	ServeMux.HandleFunc("POST /api/login", cfg.handlerLogin)
+	ServeMux.HandleFunc("GET /api/healthz", handlerReadiness)
+	ServeMux.Handle("POST /api/login", cfg.RateLimitMiddleware(cfg.authLimiter)(http.HandlerFunc(cfg.handlerLogin)))
 	ServeMux.HandleFunc("POST /api/users", cfg.handlerCreateUser)
 	ServeMux.Handle("PUT /api/users", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerUpdateUser)))
 	ServeMux.Handle("POST /api/user/password", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerUpdatePassword)))
+	ServeMux.HandleFunc("POST /api/check-password", cfg.handlerCheckPwn)
 	ServeMux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)
 	ServeMux.HandleFunc("POST /api/logout", cfg.handlerLogout)
 	ServeMux.Handle("GET /api/me", cfg.middlewareAuth(http.HandlerFunc(cfg.handlerMe)))
@@ -104,7 +113,7 @@ func main() {
 
 	ServeMux.Handle("GET /api/admin/audits", cfg.middlewareCheckAdmin(http.HandlerFunc(cfg.handlerGetAuditLogs)))
 
-	handler := middlewareCORS(ServeMux)
+	handler := middlewareCORS(cfg.RateLimitMiddleware(cfg.globalLimiter)(ServeMux))
 
 	server := &http.Server{
 		Addr:    ":" + port,
